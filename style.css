@@ -215,6 +215,8 @@ main{
   transition:transform .18s ease, box-shadow .18s ease;
   position:relative;
   cursor:pointer;
+  display:flex;
+  flex-direction:column;
 }
 .find-card:hover{
   transform:translateY(-3px);
@@ -241,7 +243,10 @@ main{
   overflow:hidden;
 }
 .find-card .thumb svg{ width:52%; height:52%; }
-.find-card .thumb img{ width:100%; height:100%; object-fit:cover; }
+.find-card .thumb img{ width:100%; height:100%; object-fit:contain; }
+.card-footer{
+  margin-top:auto;
+}
 .find-card h3{
   font-family:'Fraunces', serif;
   font-size:19px;
@@ -339,7 +344,7 @@ main{
   overflow:hidden;
 }
 .detail-photo svg{ width:38%; height:38%; }
-.detail-photo img{ width:100%; height:100%; object-fit:cover; }
+.detail-photo img{ width:100%; height:100%; object-fit:contain; }
 .detail-cat-no{
   font-family:'Space Mono', monospace;
   font-size:11px;

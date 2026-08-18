@@ -231,10 +231,12 @@ function renderCategoryPage(cat){
       <h3>${escapeHtml(it.title)}</h3>
       <p class="meta">знайдено: ${escapeHtml(it.place || '—')}</p>
       <p>${escapeHtml(truncateText(it.note, 90))}</p>
-      <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
-      <div class="card-actions">
-        <button class="icon-btn" onclick="event.stopPropagation(); toggleStatus('${cat.id}','${it.id}')">${it.status === 'sold' ? 'повернути' : 'позначити продано'}</button>
-        <button class="icon-btn danger" onclick="event.stopPropagation(); deleteItem('${cat.id}','${it.id}')">видалити</button>
+      <div class="card-footer">
+        <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+        <div class="card-actions">
+          <button class="icon-btn" onclick="event.stopPropagation(); toggleStatus('${cat.id}','${it.id}')">${it.status === 'sold' ? 'повернути' : 'позначити продано'}</button>
+          <button class="icon-btn danger" onclick="event.stopPropagation(); deleteItem('${cat.id}','${it.id}')">видалити</button>
+        </div>
       </div>
     </article>
   `).join('') : `<div class="empty-note">Тут поки порожньо — перша знахідка чекає на своє місце.</div>`;

@@ -136,7 +136,9 @@ function renderCategoryPage(cat){
       <h3>${escapeHtml(it.title)}</h3>
       <p class="meta">знайдено: ${escapeHtml(it.place || '—')}</p>
       <p>${escapeHtml(truncateText(it.note, 90))}</p>
-      <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+      <div class="card-footer">
+        <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+      </div>
     </article>
   `).join('') : `<div class="empty-note">Тут поки порожньо — перша знахідка чекає на своє місце.</div>`;
 
