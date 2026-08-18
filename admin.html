@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Знахідки — адмінка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="data.js"></script>
+</head>
+<body>
+
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <h2>Знахідки — адмінка</h2>
+    <p>Введіть пароль, щоб редагувати каталог</p>
+    <input type="password" id="lockPassword" placeholder="Пароль">
+    <div class="lock-error" id="lockError"></div>
+    <button class="btn-primary" style="width:100%" id="lockSubmit">Увійти</button>
+  </div>
+</div>
+
+<div class="shell" id="appShell" style="display:none;">
+
+  <header class="masthead">
+    <div class="masthead-top">
+      <div>
+        <p class="eyebrow">Домашній каталог · адмін-режим</p>
+        <h1>Знахідки<br><em>на двох</em></h1>
+        <p class="subline">Тут ви з дружиною додаєте, редагуєте й прибираєте знахідки. Публічна сторінка покаже їх лише після публікації.</p>
+      </div>
+      <span class="admin-badge">режим редагування</span>
+    </div>
+
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+
+  <main id="pages"></main>
+
+  <footer>
+    <span id="footer-count"></span>
+    <button class="btn-secondary" style="padding:8px 16px;" id="publishBtn">Опублікувати →</button>
+  </footer>
+
+</div>
+
+<!-- Модалка додавання/редагування знахідки -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Нова знахідка</h3>
+    <p class="modal-sub" id="modalSub"></p>
+
+    <div class="field">
+      <label>Назва</label>
+      <input type="text" id="fTitle" placeholder="напр. Чайна пара, порцеляна">
+    </div>
+    <div class="field">
+      <label>Де знайшли</label>
+      <input type="text" id="fPlace" placeholder="напр. блошиний ринок">
+    </div>
+    <div class="field">
+      <label>Опис / стан</label>
+      <textarea id="fNote" placeholder="стан, деталі, історія знахідки"></textarea>
+    </div>
+    <div class="field">
+      <label>Статус</label>
+      <select id="fStatus">
+        <option value="available">Є в наявності</option>
+        <option value="sold">Вже пішло</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Фото (необов'язково)</label>
+      <input type="file" id="fPhoto" accept="image/*">
+      <div class="photo-preview" id="photoPreview">без фото</div>
+    </div>
+
+    <div class="modal-status" id="modalStatus"></div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelBtn">Скасувати</button>
+      <button class="btn-primary" id="saveBtn">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<!-- Модалка публікації -->
+<div class="modal-overlay" id="publishOverlay">
+  <div class="modal">
+    <h3>Опублікувати каталог</h3>
+    <p class="modal-sub">Завантажте файл нижче і замініть ним <strong>data.js</strong> у вашому репозиторії на GitHub. Публічна сторінка одразу покаже оновлені знахідки.</p>
+    <button class="btn-primary" style="width:100%; margin-bottom:14px;" id="downloadDataBtn">Завантажити data.js</button>
+    <p class="modal-sub" style="margin-bottom:6px;">Або скопіюйте вміст вручну:</p>
+    <div class="publish-code" id="publishCode"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" style="width:100%;" id="closePublishBtn">Закрити</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== ПАРОЛЬ =====================
+// Проста локальна перевірка — не криптографічний захист,
+// але відсіює випадкових відвідувачів.
+const ADMIN_PASSWORD = 'znahidky2026';
+const UNLOCK_KEY = 'znahidky_admin_unlocked';
+
+function tryUnlock(){
+  const val = document.getElementById('lockPassword').value;
+  if (val === ADMIN_PASSWORD){
+    localStorage.setItem(UNLOCK_KEY, '1');
+    showApp();
+  } else {
+    document.getElementById('lockError').textContent = 'Невірний пароль';
+  }
+}
+document.getElementById('lockSubmit').addEventListener('click', tryUnlock);
+document.getElementById('lockPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+
+function showApp(){
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'block';
+  init();
+}
+
+if (localStorage.getItem(UNLOCK_KEY) === '1'){
+  showApp();
+}
+
+// ===================== ІКОНКИ ПО КАТЕГОРІЯХ =====================
+const icons = {
+  books: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 14c-6-5-14-6-20-4v34c6-2 14-1 20 4"/>
+    <path d="M32 14c6-5 14-6 20-4v34c-6-2-14-1-20 4"/>
+    <path d="M32 14v38"/>
+  </svg>`,
+  ceramics: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 12h16v8c6 4 8 10 6 18-2 8-8 12-14 12s-12-4-14-12c-2-8 0-14 6-18z"/>
+    <path d="M24 12h16"/>
+    <path d="M40 26c4 1 8 4 8 8s-3 6-6 6"/>
+  </svg>`,
+  paintings: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="10" y="12" width="44" height="34" rx="2"/>
+    <path d="M10 38l12-10 9 8 8-12 15 16"/>
+    <circle cx="22" cy="22" r="3.5"/>
+    <path d="M20 52h24"/>
+  </svg>`,
+  vinyl: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="32" r="20"/>
+    <circle cx="32" cy="32" r="13" stroke-dasharray="1.5 4"/>
+    <circle cx="32" cy="32" r="4" fill="#9C4A2E" stroke="none"/>
+  </svg>`,
+  other: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 24l20-10 20 10-20 10z"/>
+    <path d="M12 24v18l20 10 20-10V24"/>
+    <path d="M32 34v18"/>
+  </svg>`
+};
+
+const categories = [
+  { id:'about',    label:'Про нас',              index:'00' },
+  { id:'books',    label:'Книги',                index:'01' },
+  { id:'ceramics', label:'Кераміка та фарфор',    index:'02' },
+  { id:'paintings',label:'Картини',               index:'03' },
+  { id:'vinyl',    label:'Вініл',                 index:'04' },
+  { id:'other',    label:'Інше',                  index:'05' },
+];
+
+const DRAFT_KEY = 'znahidky_admin_draft';
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[] };
+
+const tabsEl = document.getElementById('tabs');
+const pagesEl = document.getElementById('pages');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalStatus = document.getElementById('modalStatus');
+let currentCatForModal = null;
+let pendingPhotoDataUrl = null;
+let detailReturnTo = 'about';
+let editingItemId = null;
+
+categories.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.dataset.target = cat.id;
+  btn.innerHTML = `<span class="tag-index">${cat.index}</span>${cat.label}`;
+  btn.addEventListener('click', () => showPage(cat.id));
+  tabsEl.appendChild(btn);
+});
+
+function renderAboutPage(){
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-about';
+  el.innerHTML = `
+    <div class="about-grid">
+      <div>
+        <h2>Про нас</h2>
+        <p>Ми збираємо старі речі — не заради колекції на полиці, а заради історій, які до них додаються.</p>
+        <p>Тут ми фіксуємо те, що знаходимо разом. Це адмін-режим — правки тут ще не бачить ніхто, крім вас, поки ви не натиснете "Опублікувати".</p>
+      </div>
+      <div class="signature-block">
+        <span class="stamp">Що ми шукаємо</span>
+        <ul>
+          <li><strong>Книги</strong> — старі видання, з характером і історією</li>
+          <li><strong>Кераміка та фарфор</strong> — посуд, дрібна пластика</li>
+          <li><strong>Картини</strong> — невеликі формати, аматорський і професійний живопис</li>
+          <li><strong>Вініл</strong> — переважно джаз, іноді щось поруч</li>
+          <li><strong>Інше</strong> — все компактне і по-справжньому цікаве</li>
+        </ul>
+      </div>
+    </div>
+  `;
+  pagesEl.appendChild(el);
+}
+
+function renderCategoryPage(cat){
+  let el = document.getElementById('page-' + cat.id);
+  if (!el){
+    el = document.createElement('section');
+    el.className = 'page';
+    el.id = 'page-' + cat.id;
+    pagesEl.appendChild(el);
+  }
+  const list = items[cat.id] || [];
+
+  const cardsHtml = list.length ? list.map((it, i) => `
+    <article class="find-card" onclick="openDetail('${cat.id}','${it.id}')">
+      <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
+      <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <h3>${escapeHtml(it.title)}</h3>
+      <p class="meta">знайдено: ${escapeHtml(it.place || '—')}</p>
+      <p>${escapeHtml(truncateText(it.note, 90))}</p>
+      <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+      <div class="card-actions">
+        <button class="icon-btn" onclick="event.stopPropagation(); toggleStatus('${cat.id}','${it.id}')">${it.status === 'sold' ? 'повернути' : 'позначити продано'}</button>
+        <button class="icon-btn danger" onclick="event.stopPropagation(); deleteItem('${cat.id}','${it.id}')">видалити</button>
+      </div>
+    </article>
+  `).join('') : `<div class="empty-note">Тут поки порожньо — перша знахідка чекає на своє місце.</div>`;
+
+  el.innerHTML = `
+    <div class="page-head">
+      <h2>${cat.label}</h2>
+      <div class="head-right">
+        <span class="count">${list.length} ${list.length === 1 ? 'позиція' : 'позицій'}</span>
+        <button class="add-btn" onclick="openModal('${cat.id}')">+ Додати знахідку</button>
+      </div>
+    </div>
+    <div class="card-grid">${cardsHtml}</div>
+  `;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+function truncateText(str, maxLen){
+  if (!str) return '';
+  if (str.length <= maxLen) return str;
+  return str.slice(0, maxLen).trim() + '…';
+}
+
+function renderDetailPage(){
+  let el = document.getElementById('page-detail');
+  if (!el){
+    el = document.createElement('section');
+    el.className = 'page';
+    el.id = 'page-detail';
+    pagesEl.appendChild(el);
+  }
+  return el;
+}
+
+function openDetail(catId, itemId){
+  const cat = categories.find(c => c.id === catId);
+  const it = (items[catId] || []).find(x => x.id === itemId);
+  if (!it) return;
+
+  detailReturnTo = catId;
+  const el = renderDetailPage();
+  el.innerHTML = `
+    <button class="back-btn" onclick="closeDetail()">← Назад до «${cat.label}»</button>
+    <div class="detail-grid">
+      <div class="detail-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <div class="detail-info">
+        <span class="detail-cat-no">${cat.index} · ${cat.label}</span>
+        <h2>${escapeHtml(it.title)}</h2>
+        <div class="detail-meta-row">
+          <span class="place">знайдено: ${escapeHtml(it.place || '—')}</span>
+          <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+        </div>
+        <p class="note">${escapeHtml(it.note || 'Опис поки не додано.')}</p>
+        <div class="detail-actions">
+          <button class="icon-btn" onclick="openModal('${catId}','${itemId}')">редагувати</button>
+          <button class="icon-btn" onclick="toggleStatus('${catId}','${itemId}'); openDetail('${catId}','${itemId}')">${it.status === 'sold' ? 'повернути в наявність' : 'позначити продано'}</button>
+          <button class="icon-btn danger" onclick="handleDetailDelete('${catId}','${itemId}')">видалити</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function closeDetail(){
+  showPage(detailReturnTo);
+}
+
+async function handleDetailDelete(catId, itemId){
+  if (!confirm('Видалити цю знахідку?')) return;
+  items[catId] = items[catId].filter(x => x.id !== itemId);
+  renderCategoryPage(categories.find(c => c.id === catId));
+  saveDraft();
+  closeDetail();
+}
+
+function renderAll(){
+  categories.forEach(cat => {
+    if (cat.id === 'about') {
+      if (!document.getElementById('page-about')) renderAboutPage();
+    } else {
+      renderCategoryPage(cat);
+    }
+  });
+  updateFooterCount();
+}
+
+function updateFooterCount(){
+  const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
+  document.getElementById('footer-count').textContent = totalItems + ' знахідок у чернетці';
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`nav.tabs button[data-target="${id}"]`).classList.add('active');
+}
+
+// ===================== ЧЕРНЕТКА (localStorage) =====================
+function loadDraft(){
+  try{
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (raw){
+      items = JSON.parse(raw);
+      return;
+    }
+  }catch(e){ /* ignore */ }
+  // немає чернетки — стартуємо з опублікованих даних, якщо вони є
+  if (window.CATALOG_DATA){
+    items = JSON.parse(JSON.stringify(window.CATALOG_DATA));
+  }
+}
+
+function saveDraft(){
+  updateFooterCount();
+  try{
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(items));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function toggleStatus(catId, itemId){
+  const it = items[catId].find(x => x.id === itemId);
+  if (!it) return;
+  it.status = it.status === 'sold' ? 'available' : 'sold';
+  renderCategoryPage(categories.find(c => c.id === catId));
+  saveDraft();
+}
+
+async function deleteItem(catId, itemId){
+  if (!confirm('Видалити цю знахідку?')) return;
+  items[catId] = items[catId].filter(x => x.id !== itemId);
+  renderCategoryPage(categories.find(c => c.id === catId));
+  const ok = saveDraft();
+  if (!ok) alert('Не вдалося зберегти видалення. Спробуйте ще раз.');
+}
+
+// ===================== МОДАЛКА ДОДАВАННЯ/РЕДАГУВАННЯ =====================
+function openModal(catId, itemId){
+  currentCatForModal = catId;
+  editingItemId = itemId || null;
+  pendingPhotoDataUrl = null;
+  const cat = categories.find(c => c.id === catId);
+  const existing = itemId ? (items[catId] || []).find(x => x.id === itemId) : null;
+
+  document.getElementById('modalTitle').textContent = existing ? 'Редагувати знахідку' : 'Нова знахідка';
+  document.getElementById('modalSub').textContent = 'Категорія: ' + cat.label;
+  document.getElementById('fTitle').value = existing ? existing.title : '';
+  document.getElementById('fPlace').value = existing ? (existing.place || '') : '';
+  document.getElementById('fNote').value = existing ? (existing.note || '') : '';
+  document.getElementById('fStatus').value = existing ? existing.status : 'available';
+  document.getElementById('fPhoto').value = '';
+
+  if (existing && existing.photo){
+    pendingPhotoDataUrl = existing.photo;
+    document.getElementById('photoPreview').innerHTML = `<img src="${existing.photo}" alt="">`;
+  } else {
+    document.getElementById('photoPreview').innerHTML = 'без фото';
+  }
+
+  document.getElementById('saveBtn').textContent = existing ? 'Зберегти зміни' : 'Зберегти';
+  modalStatus.textContent = '';
+  modalOverlay.classList.add('open');
+}
+
+function closeModal(){
+  modalOverlay.classList.remove('open');
+}
+
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+
+document.getElementById('fPhoto').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('photoPreview');
+  preview.textContent = 'обробка фото…';
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 700;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      preview.innerHTML = `<img src="${pendingPhotoDataUrl}" alt="">`;
+    };
+    img.onerror = () => { preview.textContent = 'не вдалося прочитати фото'; };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { preview.textContent = 'не вдалося прочитати файл'; };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('saveBtn').addEventListener('click', () => {
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title){
+    modalStatus.textContent = 'Вкажіть назву знахідки.';
+    return;
+  }
+
+  const fields = {
+    title,
+    place: document.getElementById('fPlace').value.trim(),
+    note: document.getElementById('fNote').value.trim(),
+    status: document.getElementById('fStatus').value,
+    photo: pendingPhotoDataUrl
+  };
+
+  let wasOnDetailPage = document.getElementById('page-detail') && document.getElementById('page-detail').classList.contains('active');
+
+  if (editingItemId){
+    const it = items[currentCatForModal].find(x => x.id === editingItemId);
+    if (it) Object.assign(it, fields);
+  } else {
+    items[currentCatForModal].unshift({
+      id: 'it_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      ...fields
+    });
+  }
+
+  renderCategoryPage(categories.find(c => c.id === currentCatForModal));
+  const ok = saveDraft();
+
+  if (ok){
+    closeModal();
+    if (wasOnDetailPage && editingItemId){
+      openDetail(currentCatForModal, editingItemId);
+    }
+  } else {
+    modalStatus.textContent = 'Не вдалося зберегти (можливо, забагато фото займають місце).';
+  }
+});
+
+// ===================== ПУБЛІКАЦІЯ =====================
+function buildDataJs(){
+  return `// Цей файл містить опубліковані знахідки.\n// Він оновлюється кнопкою "Опублікувати" в admin.html —\n// не редагуйте його вручну, якщо не впевнені, що робите.\nwindow.CATALOG_DATA = ${JSON.stringify(items, null, 2)};\n`;
+}
+
+document.getElementById('publishBtn').addEventListener('click', () => {
+  const code = buildDataJs();
+  document.getElementById('publishCode').textContent = code;
+  document.getElementById('publishOverlay').classList.add('open');
+});
+document.getElementById('closePublishBtn').addEventListener('click', () => {
+  document.getElementById('publishOverlay').classList.remove('open');
+});
+document.getElementById('publishOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('publishOverlay')) document.getElementById('publishOverlay').classList.remove('open');
+});
+document.getElementById('downloadDataBtn').addEventListener('click', () => {
+  const code = buildDataJs();
+  const blob = new Blob([code], { type: 'text/javascript' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.js';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+// ===================== СТАРТ =====================
+function init(){
+  loadDraft();
+  pagesEl.innerHTML = '';
+  renderAboutPage();
+  renderAll();
+  showPage('about');
+}
+</script>
+</body>
+</html>

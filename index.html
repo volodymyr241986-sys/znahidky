@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Знахідки — каталог вінтажу</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="data.js"></script>
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">Домашній каталог · вед. з 2026</p>
+    <h1>Знахідки<br><em>на двох</em></h1>
+    <p class="subline">Книги, кераміка, платівки та інші речі, які ми випадково знаходимо — і не можемо пройти повз.</p>
+
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+
+  <main id="pages"></main>
+
+  <footer>
+    <span>Ведеться вручну, з любов'ю до старих речей</span>
+    <span id="footer-count"></span>
+  </footer>
+
+</div>
+
+<script>
+// ===================== ІКОНКИ ПО КАТЕГОРІЯХ =====================
+const icons = {
+  books: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 14c-6-5-14-6-20-4v34c6-2 14-1 20 4"/>
+    <path d="M32 14c6-5 14-6 20-4v34c-6-2-14-1-20 4"/>
+    <path d="M32 14v38"/>
+  </svg>`,
+  ceramics: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 12h16v8c6 4 8 10 6 18-2 8-8 12-14 12s-12-4-14-12c-2-8 0-14 6-18z"/>
+    <path d="M24 12h16"/>
+    <path d="M40 26c4 1 8 4 8 8s-3 6-6 6"/>
+  </svg>`,
+  paintings: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="10" y="12" width="44" height="34" rx="2"/>
+    <path d="M10 38l12-10 9 8 8-12 15 16"/>
+    <circle cx="22" cy="22" r="3.5"/>
+    <path d="M20 52h24"/>
+  </svg>`,
+  vinyl: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="32" r="20"/>
+    <circle cx="32" cy="32" r="13" stroke-dasharray="1.5 4"/>
+    <circle cx="32" cy="32" r="4" fill="#9C4A2E" stroke="none"/>
+  </svg>`,
+  other: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 24l20-10 20 10-20 10z"/>
+    <path d="M12 24v18l20 10 20-10V24"/>
+    <path d="M32 34v18"/>
+  </svg>`
+};
+
+const categories = [
+  { id:'about',    label:'Про нас',              index:'00' },
+  { id:'books',    label:'Книги',                index:'01' },
+  { id:'ceramics', label:'Кераміка та фарфор',    index:'02' },
+  { id:'paintings',label:'Картини',               index:'03' },
+  { id:'vinyl',    label:'Вініл',                 index:'04' },
+  { id:'other',    label:'Інше',                  index:'05' },
+];
+
+// Публічна сторінка тільки читає опубліковані дані з data.js.
+const items = (window.CATALOG_DATA) ? window.CATALOG_DATA : { books:[], ceramics:[], paintings:[], vinyl:[], other:[] };
+
+const tabsEl = document.getElementById('tabs');
+const pagesEl = document.getElementById('pages');
+let detailReturnTo = 'about';
+
+categories.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.dataset.target = cat.id;
+  btn.innerHTML = `<span class="tag-index">${cat.index}</span>${cat.label}`;
+  btn.addEventListener('click', () => showPage(cat.id));
+  tabsEl.appendChild(btn);
+});
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+function truncateText(str, maxLen){
+  if (!str) return '';
+  if (str.length <= maxLen) return str;
+  return str.slice(0, maxLen).trim() + '…';
+}
+
+function renderAboutPage(){
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-about';
+  el.innerHTML = `
+    <div class="about-grid">
+      <div>
+        <h2>Про нас</h2>
+        <p>Ми збираємо старі речі — не заради колекції на полиці, а заради історій, які до них додаються. Книга з чиїмось підписом на форзаці, тарілка з тріщинкою від часу, платівка з подряпиною, яку чути тільки на другій доріжці.</p>
+        <p>Тут ми фіксуємо те, що знаходимо разом: де побували, що привезли додому, а що, можливо, вже знайшло нового господаря.</p>
+        <p>Якщо щось із цього вас зацікавило — пишіть, розкажемо більше.</p>
+      </div>
+      <div class="signature-block">
+        <span class="stamp">Що ми шукаємо</span>
+        <ul>
+          <li><strong>Книги</strong> — старі видання, з характером і історією</li>
+          <li><strong>Кераміка та фарфор</strong> — посуд, дрібна пластика</li>
+          <li><strong>Картини</strong> — невеликі формати, аматорський і професійний живопис</li>
+          <li><strong>Вініл</strong> — переважно джаз, іноді щось поруч</li>
+          <li><strong>Інше</strong> — все компактне і по-справжньому цікаве</li>
+        </ul>
+      </div>
+    </div>
+  `;
+  pagesEl.appendChild(el);
+}
+
+function renderCategoryPage(cat){
+  const list = items[cat.id] || [];
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-' + cat.id;
+
+  const cardsHtml = list.length ? list.map((it, i) => `
+    <article class="find-card" onclick="openDetail('${cat.id}','${it.id}')">
+      <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
+      <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <h3>${escapeHtml(it.title)}</h3>
+      <p class="meta">знайдено: ${escapeHtml(it.place || '—')}</p>
+      <p>${escapeHtml(truncateText(it.note, 90))}</p>
+      <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+    </article>
+  `).join('') : `<div class="empty-note">Тут поки порожньо — перша знахідка чекає на своє місце.</div>`;
+
+  el.innerHTML = `
+    <div class="page-head">
+      <h2>${cat.label}</h2>
+      <span class="count">${list.length} ${list.length === 1 ? 'позиція' : 'позицій'}</span>
+    </div>
+    <div class="card-grid">${cardsHtml}</div>
+  `;
+  pagesEl.appendChild(el);
+}
+
+function renderDetailPage(){
+  let el = document.getElementById('page-detail');
+  if (!el){
+    el = document.createElement('section');
+    el.className = 'page';
+    el.id = 'page-detail';
+    pagesEl.appendChild(el);
+  }
+  return el;
+}
+
+function openDetail(catId, itemId){
+  const cat = categories.find(c => c.id === catId);
+  const it = (items[catId] || []).find(x => x.id === itemId);
+  if (!it) return;
+
+  detailReturnTo = catId;
+  const el = renderDetailPage();
+  el.innerHTML = `
+    <button class="back-btn" onclick="closeDetail()">← Назад до «${cat.label}»</button>
+    <div class="detail-grid">
+      <div class="detail-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <div class="detail-info">
+        <span class="detail-cat-no">${cat.index} · ${cat.label}</span>
+        <h2>${escapeHtml(it.title)}</h2>
+        <div class="detail-meta-row">
+          <span class="place">знайдено: ${escapeHtml(it.place || '—')}</span>
+          <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+        </div>
+        <p class="note">${escapeHtml(it.note || 'Опис поки не додано.')}</p>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function closeDetail(){
+  showPage(detailReturnTo);
+}
+
+categories.forEach(cat => {
+  if (cat.id === 'about') renderAboutPage();
+  else renderCategoryPage(cat);
+});
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`nav.tabs button[data-target="${id}"]`).classList.add('active');
+}
+
+const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
+document.getElementById('footer-count').textContent = totalItems + ' знахідок у каталозі';
+
+showPage('about');
+</script>
+</body>
+</html>
