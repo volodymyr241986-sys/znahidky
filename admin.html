@@ -125,10 +125,6 @@ function showApp(){
   init();
 }
 
-if (localStorage.getItem(UNLOCK_KEY) === '1'){
-  showApp();
-}
-
 // ===================== ІКОНКИ ПО КАТЕГОРІЯХ =====================
 const icons = {
   books: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -522,6 +518,10 @@ function init(){
   renderAboutPage();
   renderAll();
   showPage('about');
+}
+
+if (localStorage.getItem(UNLOCK_KEY) === '1'){
+  showApp();
 }
 </script>
 </body>
