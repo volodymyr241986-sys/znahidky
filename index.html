@@ -87,7 +87,7 @@ const categories = [
 ];
 
 // Публічна сторінка завантажує опубліковані дані з data.json (без кешу браузера).
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[] };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[] };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -126,6 +126,16 @@ function getRecentFinds(limit){
   return all.slice(0, limit);
 }
 
+function getRecentArticles(limit){
+  const all = (items.articles || []).map(a => {
+    const m = /^art_(\d+)_/.exec(a.id);
+    const ts = m ? parseInt(m[1], 10) : 0;
+    return { ...a, ts };
+  });
+  all.sort((a, b) => b.ts - a.ts);
+  return all.slice(0, limit);
+}
+
 function renderAboutPage(){
   const el = document.createElement('section');
   el.className = 'page';
@@ -133,7 +143,6 @@ function renderAboutPage(){
 
   const recent = getRecentFinds(6);
   const recentHtml = recent.length ? recent.map(it => {
-    const cat = categories.find(c => c.id === it.catId);
     return `
       <div class="recent-card" onclick="openDetail('${it.catId}','${it.id}')">
         <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}</div>
@@ -141,6 +150,16 @@ function renderAboutPage(){
       </div>
     `;
   }).join('') : `<div class="empty-note">Знахідок поки немає — скоро тут щось з'явиться.</div>`;
+
+  const recentArticles = getRecentArticles(2);
+  const articlesHtml = recentArticles.length ? recentArticles.map(a => `
+    <div class="article-preview">
+      <div class="article-preview-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+      <h4>${escapeHtml(a.title)}</h4>
+      <p>${escapeHtml(a.excerpt || '')}</p>
+      <button class="read-btn" onclick="openArticleDetail('${a.id}')">Читати →</button>
+    </div>
+  `).join('') : `<div class="empty-note">Статей поки немає — скоро тут щось з'явиться.</div>`;
 
   el.innerHTML = `
     <div class="about-grid">
@@ -163,8 +182,13 @@ function renderAboutPage(){
     </div>
 
     <div class="recent-strip">
-      <h3>Останні знахідки</h3>
+      <h3>Нові знахідки</h3>
       <div class="recent-list">${recentHtml}</div>
+    </div>
+
+    <div class="articles-strip">
+      <h3>Статті</h3>
+      <div class="articles-preview-grid">${articlesHtml}</div>
     </div>
   `;
   pagesEl.appendChild(el);
@@ -246,13 +270,57 @@ function renderArticlesPage(){
   const el = document.createElement('section');
   el.className = 'page';
   el.id = 'page-articles';
+  const list = getRecentArticles(999);
+
+  const cardsHtml = list.length ? list.map(a => `
+    <article class="find-card" onclick="openArticleDetail('${a.id}')">
+      <div class="thumb">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+      <h3>${escapeHtml(a.title)}</h3>
+      <p>${escapeHtml(truncateText(a.excerpt, 100))}</p>
+    </article>
+  `).join('') : `<div class="empty-note">Тут скоро з'являться наші історії про знахідки. Заглядайте пізніше.</div>`;
+
   el.innerHTML = `
     <div class="page-head">
       <h2>Статті</h2>
+      <span class="count">${list.length} ${list.length === 1 ? 'стаття' : 'статей'}</span>
     </div>
-    <div class="empty-note">Тут скоро з'являться наші історії про знахідки. Заглядайте пізніше.</div>
+    <div class="card-grid">${cardsHtml}</div>
   `;
   pagesEl.appendChild(el);
+}
+
+function renderArticleDetailPage(){
+  let el = document.getElementById('page-article-detail');
+  if (!el){
+    el = document.createElement('section');
+    el.className = 'page';
+    el.id = 'page-article-detail';
+    pagesEl.appendChild(el);
+  }
+  return el;
+}
+
+function openArticleDetail(articleId){
+  const a = (items.articles || []).find(x => x.id === articleId);
+  if (!a) return;
+
+  detailReturnTo = 'articles';
+  const el = renderArticleDetailPage();
+  el.innerHTML = `
+    <button class="back-btn" onclick="closeDetail()">← Назад до «Статті»</button>
+    <div class="detail-grid">
+      <div class="detail-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+      <div class="detail-info">
+        <h2>${escapeHtml(a.title)}</h2>
+        <p class="note">${escapeHtml(a.content || a.excerpt || '')}</p>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
 }
 
 let totalItemsCount = 0;

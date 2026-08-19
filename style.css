@@ -344,12 +344,12 @@ main{
   scrollbar-width:thin;
 }
 .recent-card{
-  flex:0 0 140px;
+  flex:0 0 190px;
   cursor:pointer;
 }
 .recent-card .thumb{
-  width:140px;
-  height:140px;
+  width:190px;
+  height:190px;
   border-radius:12px;
   background:var(--accent-soft);
   display:flex;
@@ -360,8 +360,8 @@ main{
   transition:transform .18s ease;
 }
 .recent-card:hover .thumb{ transform:translateY(-3px); }
-.recent-card .thumb svg{ width:42%; height:42%; }
-.recent-card .thumb img{ width:100%; height:100%; object-fit:cover; }
+.recent-card .thumb svg{ width:36%; height:36%; }
+.recent-card .thumb img{ width:100%; height:100%; object-fit:contain; }
 .recent-card p{
   font-size:13px;
   color:var(--ink-soft);
@@ -372,6 +372,80 @@ main{
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
+
+.articles-strip{
+  margin-top:40px;
+  padding-top:32px;
+  border-top:1px solid var(--line);
+}
+.articles-strip h3{
+  font-family:'Fraunces', serif;
+  font-size:22px;
+  font-weight:600;
+  margin:0 0 18px 0;
+}
+.articles-preview-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:0;
+}
+@media (max-width:720px){ .articles-preview-grid{grid-template-columns:1fr; gap:28px;} }
+.article-preview{
+  padding:0 28px;
+}
+.article-preview:first-child{
+  padding-left:0;
+  border-right:1px solid var(--line);
+}
+@media (max-width:720px){
+  .article-preview:first-child{ border-right:none; padding-right:0; }
+}
+.article-preview:last-child{
+  padding-right:0;
+}
+.article-preview-photo{
+  width:100%;
+  aspect-ratio:16/10;
+  border-radius:12px;
+  background:var(--accent-soft);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  margin-bottom:14px;
+}
+.article-preview-photo svg{ width:32%; height:32%; }
+.article-preview-photo img{ width:100%; height:100%; object-fit:contain; }
+.article-preview h4{
+  font-family:'Fraunces', serif;
+  font-size:19px;
+  font-weight:600;
+  margin:0 0 8px 0;
+}
+.article-preview p{
+  font-size:14px;
+  line-height:1.55;
+  color:var(--ink-soft);
+  margin:0 0 14px 0;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.read-btn{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  background:transparent;
+  border:1px solid var(--accent);
+  color:var(--accent-deep);
+  border-radius:999px;
+  padding:8px 16px;
+  cursor:pointer;
+  transition:background .15s ease;
+}
+.read-btn:hover{ background:var(--accent); color:#fff; }
 
 .page-head{
   display:flex;

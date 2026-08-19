@@ -86,6 +86,38 @@
   </div>
 </div>
 
+<!-- Модалка додавання/редагування статті -->
+<div class="modal-overlay" id="articleModalOverlay">
+  <div class="modal">
+    <h3 id="articleModalTitle">Нова стаття</h3>
+
+    <div class="field">
+      <label>Заголовок</label>
+      <input type="text" id="aTitle" placeholder="напр. Як ми почали збирати вінтаж">
+    </div>
+    <div class="field">
+      <label>Короткий опис (буде показано в стрічці)</label>
+      <textarea id="aExcerpt" placeholder="2-3 речення, які підсумовують статтю" style="min-height:56px;"></textarea>
+    </div>
+    <div class="field">
+      <label>Повний текст статті</label>
+      <textarea id="aContent" placeholder="Текст статті повністю" style="min-height:140px;"></textarea>
+    </div>
+    <div class="field">
+      <label>Фото (необов'язково)</label>
+      <input type="file" id="aPhoto" accept="image/*">
+      <div class="photo-preview" id="aPhotoPreview">без фото</div>
+    </div>
+
+    <div class="modal-status" id="articleModalStatus"></div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="articleCancelBtn">Скасувати</button>
+      <button class="btn-primary" id="articleSaveBtn">Зберегти</button>
+    </div>
+  </div>
+</div>
+
 <!-- Модалка публікації -->
 <div class="modal-overlay" id="publishOverlay">
   <div class="modal">
@@ -162,10 +194,11 @@ const categories = [
   { id:'paintings',label:'Картини',               index:'03' },
   { id:'vinyl',    label:'Вініл',                 index:'04' },
   { id:'other',    label:'Інше',                  index:'05' },
+  { id:'articles', label:'Статті',                index:'06' },
 ];
 
 const DRAFT_KEY = 'znahidky_admin_draft';
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[] };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[] };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -260,6 +293,146 @@ function truncateText(str, maxLen){
   return str.slice(0, maxLen).trim() + '…';
 }
 
+// ===================== СТАТТІ (адмін) =====================
+function renderArticlesAdminPage(){
+  let el = document.getElementById('page-articles');
+  if (!el){
+    el = document.createElement('section');
+    el.className = 'page';
+    el.id = 'page-articles';
+    pagesEl.appendChild(el);
+  }
+  const list = items.articles || [];
+
+  const cardsHtml = list.length ? list.map(a => `
+    <article class="find-card" onclick="openArticleModal('${a.id}')">
+      <div class="thumb">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+      <h3>${escapeHtml(a.title)}</h3>
+      <p>${escapeHtml(truncateText(a.excerpt, 100))}</p>
+      <div class="card-footer">
+        <div class="card-actions">
+          <button class="icon-btn danger" onclick="event.stopPropagation(); deleteArticle('${a.id}')">видалити</button>
+        </div>
+      </div>
+    </article>
+  `).join('') : `<div class="empty-note">Статей поки немає.</div>`;
+
+  el.innerHTML = `
+    <div class="page-head">
+      <h2>Статті</h2>
+      <div class="head-right">
+        <span class="count">${list.length} ${list.length === 1 ? 'стаття' : 'статей'}</span>
+        <button class="add-btn" onclick="openArticleModal()">+ Додати статтю</button>
+      </div>
+    </div>
+    <div class="card-grid">${cardsHtml}</div>
+  `;
+}
+
+let editingArticleId = null;
+let pendingArticlePhotoDataUrl = null;
+
+function openArticleModal(articleId){
+  editingArticleId = articleId || null;
+  pendingArticlePhotoDataUrl = null;
+  const existing = articleId ? (items.articles || []).find(a => a.id === articleId) : null;
+
+  document.getElementById('articleModalTitle').textContent = existing ? 'Редагувати статтю' : 'Нова стаття';
+  document.getElementById('aTitle').value = existing ? existing.title : '';
+  document.getElementById('aExcerpt').value = existing ? (existing.excerpt || '') : '';
+  document.getElementById('aContent').value = existing ? (existing.content || '') : '';
+  document.getElementById('aPhoto').value = '';
+
+  if (existing && existing.photo){
+    pendingArticlePhotoDataUrl = existing.photo;
+    document.getElementById('aPhotoPreview').innerHTML = `<img src="${existing.photo}" alt="">`;
+  } else {
+    document.getElementById('aPhotoPreview').innerHTML = 'без фото';
+  }
+
+  document.getElementById('articleSaveBtn').textContent = existing ? 'Зберегти зміни' : 'Зберегти';
+  document.getElementById('articleModalStatus').textContent = '';
+  document.getElementById('articleModalOverlay').classList.add('open');
+}
+
+function closeArticleModal(){
+  document.getElementById('articleModalOverlay').classList.remove('open');
+}
+
+document.getElementById('articleCancelBtn').addEventListener('click', closeArticleModal);
+document.getElementById('articleModalOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('articleModalOverlay')) closeArticleModal();
+});
+
+document.getElementById('aPhoto').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('aPhotoPreview');
+  preview.textContent = 'обробка фото…';
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingArticlePhotoDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      preview.innerHTML = `<img src="${pendingArticlePhotoDataUrl}" alt="">`;
+    };
+    img.onerror = () => { preview.textContent = 'не вдалося прочитати фото'; };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { preview.textContent = 'не вдалося прочитати файл'; };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('articleSaveBtn').addEventListener('click', () => {
+  const title = document.getElementById('aTitle').value.trim();
+  if (!title){
+    document.getElementById('articleModalStatus').textContent = 'Вкажіть заголовок статті.';
+    return;
+  }
+
+  const fields = {
+    title,
+    excerpt: document.getElementById('aExcerpt').value.trim(),
+    content: document.getElementById('aContent').value.trim(),
+    photo: pendingArticlePhotoDataUrl
+  };
+
+  if (!items.articles) items.articles = [];
+
+  if (editingArticleId){
+    const a = items.articles.find(x => x.id === editingArticleId);
+    if (a) Object.assign(a, fields);
+  } else {
+    items.articles.unshift({
+      id: 'art_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      ...fields
+    });
+  }
+
+  renderArticlesAdminPage();
+  const ok = saveDraft();
+  if (ok){
+    closeArticleModal();
+  } else {
+    document.getElementById('articleModalStatus').textContent = 'Не вдалося зберегти (можливо, забагато фото займають місце).';
+  }
+});
+
+async function deleteArticle(articleId){
+  if (!confirm('Видалити цю статтю?')) return;
+  items.articles = (items.articles || []).filter(a => a.id !== articleId);
+  renderArticlesAdminPage();
+  saveDraft();
+}
+
 function renderDetailPage(){
   let el = document.getElementById('page-detail');
   if (!el){
@@ -320,6 +493,8 @@ function renderAll(){
   categories.forEach(cat => {
     if (cat.id === 'about') {
       if (!document.getElementById('page-about')) renderAboutPage();
+    } else if (cat.id === 'articles') {
+      renderArticlesAdminPage();
     } else {
       renderCategoryPage(cat);
     }
@@ -328,7 +503,7 @@ function renderAll(){
 }
 
 function updateFooterCount(){
-  const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
+  const totalItems = ['books','ceramics','paintings','vinyl','other'].reduce((sum, id) => sum + (items[id] || []).length, 0);
   document.getElementById('footer-count').textContent = totalItems + ' знахідок у чернетці';
 }
 
@@ -345,6 +520,7 @@ async function loadDraft(){
     const raw = localStorage.getItem(DRAFT_KEY);
     if (raw){
       items = JSON.parse(raw);
+      if (!items.articles) items.articles = [];
       return;
     }
   }catch(e){ /* ignore */ }
@@ -353,6 +529,7 @@ async function loadDraft(){
     const res = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok){
       items = await res.json();
+      if (!items.articles) items.articles = [];
     }
   }catch(e){ /* нема опублікованих даних — стартуємо з порожнього каталогу */ }
 }
