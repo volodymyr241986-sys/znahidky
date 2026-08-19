@@ -179,7 +179,7 @@ let editingItemId = null;
 categories.forEach(cat => {
   const btn = document.createElement('button');
   btn.dataset.target = cat.id;
-  btn.innerHTML = `<span class="tag-index">${cat.index}</span>${cat.label}`;
+  btn.textContent = cat.label;
   btn.addEventListener('click', () => showPage(cat.id));
   tabsEl.appendChild(btn);
 });

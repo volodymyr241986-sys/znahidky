@@ -14,9 +14,35 @@
 <div class="shell">
 
   <header class="masthead">
-    <p class="eyebrow">Домашній каталог · вед. з 2026</p>
-    <h1>Знахідки<br><em>на двох</em></h1>
-    <p class="subline">Книги, кераміка, платівки та інші речі, які ми випадково знаходимо — і не можемо пройти повз.</p>
+    <div class="site-top">
+      <div class="brand">
+        <div class="brand-mark">З<span class="brand-dot"></span></div>
+        <span class="eyebrow" style="margin:0;">Знахідки на двох</span>
+      </div>
+      <div class="social-links">
+        <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+        </a>
+        <a href="https://t.me" target="_blank" rel="noopener" aria-label="Telegram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L2.5 11.5l6 2 2 6.5 3-4 4.5 3.5L21 4z"/><path d="M8.5 13.5L19 6"/></svg>
+        </a>
+        <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h-2a4 4 0 0 0-4 4v3H6v4h3v7h4v-7h3l1-4h-4V8a1 1 0 0 1 1-1h3z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">Домашній каталог · вед. з 2026</p>
+        <h1>Знахідки<br><em>на двох</em></h1>
+        <p class="subline">Книги, кераміка, платівки та інші речі, які ми випадково знаходимо — і не можемо пройти повз.</p>
+        <div class="counter-pill"><span id="findsCounter">0</span> знахідок з 2026 року</div>
+      </div>
+      <div class="hero-photo">
+        <img src="https://images.stockcake.com/public/8/e/a/8eaa13a5-dd94-4970-b8cf-043bc730c447_large/cozy-record-shelf-stockcake.jpg" alt="Затишна поличка з книгами та платівками">
+      </div>
+    </div>
 
     <nav class="tabs" id="tabs"></nav>
   </header>
@@ -68,6 +94,7 @@ const categories = [
   { id:'paintings',label:'Картини',               index:'03' },
   { id:'vinyl',    label:'Вініл',                 index:'04' },
   { id:'other',    label:'Інше',                  index:'05' },
+  { id:'articles', label:'Статті',                index:'06' },
 ];
 
 // Публічна сторінка завантажує опубліковані дані з data.json (без кешу браузера).
@@ -80,7 +107,7 @@ let detailReturnTo = 'about';
 categories.forEach(cat => {
   const btn = document.createElement('button');
   btn.dataset.target = cat.id;
-  btn.innerHTML = `<span class="tag-index">${cat.index}</span>${cat.label}`;
+  btn.textContent = cat.label;
   btn.addEventListener('click', () => showPage(cat.id));
   tabsEl.appendChild(btn);
 });
@@ -195,6 +222,19 @@ function closeDetail(){
   showPage(detailReturnTo);
 }
 
+function renderArticlesPage(){
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-articles';
+  el.innerHTML = `
+    <div class="page-head">
+      <h2>Статті</h2>
+    </div>
+    <div class="empty-note">Тут скоро з'являться наші історії про знахідки. Заглядайте пізніше.</div>
+  `;
+  pagesEl.appendChild(el);
+}
+
 function showPage(id){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
@@ -216,11 +256,13 @@ async function init(){
   pagesEl.innerHTML = '';
   categories.forEach(cat => {
     if (cat.id === 'about') renderAboutPage();
+    else if (cat.id === 'articles') renderArticlesPage();
     else renderCategoryPage(cat);
   });
 
   const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
   document.getElementById('footer-count').textContent = totalItems + ' знахідок у каталозі';
+  document.getElementById('findsCounter').textContent = totalItems;
 
   showPage('about');
 }
