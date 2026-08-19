@@ -112,10 +112,36 @@ function truncateText(str, maxLen){
   return str.slice(0, maxLen).trim() + '…';
 }
 
+function getRecentFinds(limit){
+  const realCatIds = categories.filter(c => c.id !== 'about' && c.id !== 'articles').map(c => c.id);
+  let all = [];
+  realCatIds.forEach(catId => {
+    (items[catId] || []).forEach(it => {
+      const m = /^it_(\d+)_/.exec(it.id);
+      const ts = m ? parseInt(m[1], 10) : 0;
+      all.push({ ...it, catId, ts });
+    });
+  });
+  all.sort((a, b) => b.ts - a.ts);
+  return all.slice(0, limit);
+}
+
 function renderAboutPage(){
   const el = document.createElement('section');
   el.className = 'page';
   el.id = 'page-about';
+
+  const recent = getRecentFinds(6);
+  const recentHtml = recent.length ? recent.map(it => {
+    const cat = categories.find(c => c.id === it.catId);
+    return `
+      <div class="recent-card" onclick="openDetail('${it.catId}','${it.id}')">
+        <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}</div>
+        <p>${escapeHtml(it.title)}</p>
+      </div>
+    `;
+  }).join('') : `<div class="empty-note">Знахідок поки немає — скоро тут щось з'явиться.</div>`;
+
   el.innerHTML = `
     <div class="about-grid">
       <div>
@@ -134,6 +160,11 @@ function renderAboutPage(){
           <li><strong>Інше</strong> — все компактне і по-справжньому цікаве</li>
         </ul>
       </div>
+    </div>
+
+    <div class="recent-strip">
+      <h3>Останні знахідки</h3>
+      <div class="recent-list">${recentHtml}</div>
     </div>
   `;
   pagesEl.appendChild(el);

@@ -325,6 +325,54 @@ main{
 }
 .signature-block li strong{color:var(--ink);}
 
+.recent-strip{
+  margin-top:48px;
+  padding-top:32px;
+  border-top:1px solid var(--line);
+}
+.recent-strip h3{
+  font-family:'Fraunces', serif;
+  font-size:22px;
+  font-weight:600;
+  margin:0 0 18px 0;
+}
+.recent-list{
+  display:flex;
+  gap:16px;
+  overflow-x:auto;
+  padding-bottom:8px;
+  scrollbar-width:thin;
+}
+.recent-card{
+  flex:0 0 140px;
+  cursor:pointer;
+}
+.recent-card .thumb{
+  width:140px;
+  height:140px;
+  border-radius:12px;
+  background:var(--accent-soft);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  margin-bottom:10px;
+  transition:transform .18s ease;
+}
+.recent-card:hover .thumb{ transform:translateY(-3px); }
+.recent-card .thumb svg{ width:42%; height:42%; }
+.recent-card .thumb img{ width:100%; height:100%; object-fit:cover; }
+.recent-card p{
+  font-size:13px;
+  color:var(--ink-soft);
+  margin:0;
+  line-height:1.4;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
 .page-head{
   display:flex;
   justify-content:space-between;
