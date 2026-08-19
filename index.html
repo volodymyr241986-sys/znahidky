@@ -17,7 +17,6 @@
     <div class="site-top">
       <div class="brand">
         <div class="brand-mark">З<span class="brand-dot"></span></div>
-        <span class="eyebrow" style="margin:0;">Знахідки на двох</span>
       </div>
       <div class="social-links">
         <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">
@@ -32,7 +31,7 @@
       </div>
     </div>
 
-    <p class="compact-title">Знахідки на двох</p>
+    <div id="pageBanner"></div>
 
     <nav class="tabs" id="tabs"></nav>
   </header>
@@ -118,18 +117,6 @@ function renderAboutPage(){
   el.className = 'page';
   el.id = 'page-about';
   el.innerHTML = `
-    <div class="hero">
-      <div class="hero-text">
-        <p class="eyebrow">Домашній каталог · вед. з 2026</p>
-        <h1>Знахідки<br><em>на двох</em></h1>
-        <p class="subline">Книги, кераміка, платівки та інші речі, які ми випадково знаходимо — і не можемо пройти повз.</p>
-        <div class="counter-pill"><span id="findsCounter">0</span> знахідок з 2026 року</div>
-      </div>
-      <div class="hero-photo">
-        <img src="https://images.stockcake.com/public/8/e/a/8eaa13a5-dd94-4970-b8cf-043bc730c447_large/cozy-record-shelf-stockcake.jpg" alt="Затишна поличка з книгами та платівками">
-      </div>
-    </div>
-
     <div class="about-grid">
       <div>
         <h2>Про нас</h2>
@@ -237,11 +224,35 @@ function renderArticlesPage(){
   pagesEl.appendChild(el);
 }
 
+let totalItemsCount = 0;
+
+function renderPageBanner(id){
+  const banner = document.getElementById('pageBanner');
+  if (id === 'about'){
+    banner.innerHTML = `
+      <div class="hero">
+        <div class="hero-text">
+          <p class="eyebrow">Домашній каталог · вед. з 2026</p>
+          <h1>Знахідки<br><em>на двох</em></h1>
+          <p class="subline">Книги, кераміка, платівки та інші речі, які ми випадково знаходимо — і не можемо пройти повз.</p>
+          <div class="counter-pill"><span>${totalItemsCount}</span> знахідок з 2026 року</div>
+        </div>
+        <div class="hero-photo">
+          <img src="https://images.stockcake.com/public/8/e/a/8eaa13a5-dd94-4970-b8cf-043bc730c447_large/cozy-record-shelf-stockcake.jpg" alt="Затишна поличка з книгами та платівками">
+        </div>
+      </div>
+    `;
+  } else {
+    banner.innerHTML = `<h1 class="page-banner-title">Знахідки <em>на двох</em></h1>`;
+  }
+}
+
 function showPage(id){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelector(`nav.tabs button[data-target="${id}"]`).classList.add('active');
+  renderPageBanner(id);
 }
 
 async function init(){
@@ -262,9 +273,8 @@ async function init(){
     else renderCategoryPage(cat);
   });
 
-  const totalItems = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
-  document.getElementById('footer-count').textContent = totalItems + ' знахідок у каталозі';
-  document.getElementById('findsCounter').textContent = totalItems;
+  totalItemsCount = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
+  document.getElementById('footer-count').textContent = totalItemsCount + ' знахідок у каталозі';
 
   showPage('about');
 }

@@ -193,13 +193,14 @@ header.masthead{
 .social-links a:hover{ opacity:0.65; }
 .social-links svg{ width:19px; height:19px; }
 
-.compact-title{
-  font-family:'Fraunces', serif;
+.masthead h1.page-banner-title{
+  text-align:center;
+  margin:0 0 22px 0;
+}
+.page-banner-title em{
   font-style:italic;
-  font-weight:500;
-  font-size:16px;
-  color:var(--accent-deep);
-  margin:0 0 18px 0;
+  font-weight:400;
+  color:var(--accent);
 }
 .hero{
   display:grid;
