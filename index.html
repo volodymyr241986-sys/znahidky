@@ -203,8 +203,8 @@ function renderCategoryGrid(cat){
   if (!grid) return;
 
   const searchVal = (document.getElementById('search-' + cat.id).value || '').trim().toLowerCase();
-  const filterVal = document.getElementById('filter-' + cat.id).value;
-  const sortVal = document.getElementById('sort-' + cat.id).value;
+  const filterVal = document.getElementById('filter-' + cat.id).dataset.value;
+  const sortVal = document.getElementById('sort-' + cat.id).dataset.value;
 
   let list = (items[cat.id] || []).slice();
 
@@ -226,6 +226,51 @@ function renderCategoryGrid(cat){
   countEl.textContent = list.length + ' ' + (list.length === 1 ? 'позиція' : 'позицій');
 }
 
+// ===================== ВЛАСНИЙ ДРОПДАВН =====================
+const FILTER_LABELS = { all:'Усі', available:'В наявності', sold:'Продані' };
+const SORT_LABELS = { new:'Спочатку нові', old:'Спочатку старі', az:'За назвою (А-Я)' };
+
+function buildCustomSelect(id, labels, current){
+  const optionsHtml = Object.entries(labels).map(([val, label]) => `
+    <div class="custom-select-option${val === current ? ' selected' : ''}" data-value="${val}" onclick="selectDropdownOption('${id}', '${val}')">${label}</div>
+  `).join('');
+  return `
+    <div class="custom-select" id="${id}" data-value="${current}">
+      <button type="button" class="custom-select-trigger" onclick="toggleDropdown('${id}')">
+        <span class="custom-select-label">${labels[current]}</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="custom-select-options">${optionsHtml}</div>
+    </div>
+  `;
+}
+
+function toggleDropdown(id){
+  const el = document.getElementById(id);
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.custom-select.open').forEach(d => d.classList.remove('open'));
+  if (!isOpen) el.classList.add('open');
+}
+
+function selectDropdownOption(id, value){
+  const el = document.getElementById(id);
+  el.dataset.value = value;
+  const labels = id.startsWith('filter-') ? FILTER_LABELS : SORT_LABELS;
+  el.querySelector('.custom-select-label').textContent = labels[value];
+  el.querySelectorAll('.custom-select-option').forEach(o => o.classList.toggle('selected', o.dataset.value === value));
+  el.classList.remove('open');
+
+  const catId = id.replace(/^(filter|sort)-/, '');
+  const cat = categories.find(c => c.id === catId);
+  if (cat) renderCategoryGrid(cat);
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.custom-select')){
+    document.querySelectorAll('.custom-select.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
 function renderCategoryPage(cat){
   const el = document.createElement('section');
   el.className = 'page';
@@ -234,16 +279,8 @@ function renderCategoryPage(cat){
   el.innerHTML = `
     <div class="page-toolbar">
       <input type="search" class="search-input" id="search-${cat.id}" placeholder="Пошук по назві…" oninput="renderCategoryGrid(categories.find(c => c.id==='${cat.id}'))">
-      <select class="filter-select" id="filter-${cat.id}" onchange="renderCategoryGrid(categories.find(c => c.id==='${cat.id}'))">
-        <option value="all">Усі</option>
-        <option value="available">В наявності</option>
-        <option value="sold">Продані</option>
-      </select>
-      <select class="filter-select" id="sort-${cat.id}" onchange="renderCategoryGrid(categories.find(c => c.id==='${cat.id}'))">
-        <option value="new">Спочатку нові</option>
-        <option value="old">Спочатку старі</option>
-        <option value="az">За назвою (А-Я)</option>
-      </select>
+      ${buildCustomSelect('filter-' + cat.id, FILTER_LABELS, 'all')}
+      ${buildCustomSelect('sort-' + cat.id, SORT_LABELS, 'new')}
       <span class="count" id="count-${cat.id}"></span>
     </div>
     <div class="card-grid" id="grid-${cat.id}"></div>

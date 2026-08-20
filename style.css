@@ -516,7 +516,7 @@ main{
   font-size:14px;
   padding:10px 14px;
   border:1px solid var(--line);
-  border-radius:999px;
+  border-radius:10px;
   background:var(--paper-card);
   color:var(--ink);
 }
@@ -528,12 +528,71 @@ main{
   text-transform:uppercase;
   padding:10px 14px;
   border:1px solid var(--line);
-  border-radius:999px;
+  border-radius:10px;
   background:var(--paper-card);
   color:var(--ink-soft);
   cursor:pointer;
 }
 .filter-select:focus{ outline:none; border-color:var(--accent); }
+
+.custom-select{
+  position:relative;
+}
+.custom-select-trigger{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  padding:10px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--paper-card);
+  color:var(--ink-soft);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.custom-select-trigger:hover{ border-color:var(--accent); color:var(--accent-deep); }
+.custom-select.open .custom-select-trigger{ border-color:var(--accent); color:var(--accent-deep); }
+.custom-select-trigger .chevron{
+  width:12px; height:12px;
+  flex-shrink:0;
+  transition:transform .15s ease;
+}
+.custom-select.open .chevron{ transform:rotate(180deg); }
+.custom-select-options{
+  display:none;
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  min-width:100%;
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  box-shadow:0 12px 28px rgba(58,52,44,0.16);
+  padding:6px;
+  z-index:30;
+}
+.custom-select.open .custom-select-options{ display:block; }
+.custom-select-option{
+  padding:9px 12px;
+  border-radius:7px;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.custom-select-option:hover{ background:var(--paper-dim); color:var(--ink); }
+.custom-select-option.selected{
+  background:var(--accent-soft);
+  color:var(--accent-deep);
+  font-weight:700;
+}
 .page-toolbar .count{
   font-family:'Space Mono', monospace;
   font-size:11px;
