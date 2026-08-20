@@ -177,13 +177,8 @@ function renderAboutPage(){
   pagesEl.appendChild(el);
 }
 
-function renderCategoryPage(cat){
-  const list = items[cat.id] || [];
-  const el = document.createElement('section');
-  el.className = 'page';
-  el.id = 'page-' + cat.id;
-
-  const cardsHtml = list.length ? list.map((it, i) => `
+function buildCardHtml(cat, it, i){
+  return `
     <article class="find-card" onclick="openDetail('${cat.id}','${it.id}')">
       <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
       <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
@@ -194,16 +189,67 @@ function renderCategoryPage(cat){
         <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
       </div>
     </article>
-  `).join('') : `<div class="empty-note">Тут поки порожньо — перша знахідка чекає на своє місце.</div>`;
+  `;
+}
+
+function getItemTs(it){
+  const m = /^it_(\d+)_/.exec(it.id);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+function renderCategoryGrid(cat){
+  const grid = document.getElementById('grid-' + cat.id);
+  const countEl = document.getElementById('count-' + cat.id);
+  if (!grid) return;
+
+  const searchVal = (document.getElementById('search-' + cat.id).value || '').trim().toLowerCase();
+  const filterVal = document.getElementById('filter-' + cat.id).value;
+  const sortVal = document.getElementById('sort-' + cat.id).value;
+
+  let list = (items[cat.id] || []).slice();
+
+  if (searchVal){
+    list = list.filter(it => (it.title || '').toLowerCase().includes(searchVal));
+  }
+  if (filterVal !== 'all'){
+    list = list.filter(it => it.status === filterVal);
+  }
+  if (sortVal === 'new'){
+    list.sort((a, b) => getItemTs(b) - getItemTs(a));
+  } else if (sortVal === 'old'){
+    list.sort((a, b) => getItemTs(a) - getItemTs(b));
+  } else if (sortVal === 'az'){
+    list.sort((a, b) => a.title.localeCompare(b.title, 'uk'));
+  }
+
+  grid.innerHTML = list.length ? list.map((it, i) => buildCardHtml(cat, it, i)).join('') : `<div class="empty-note">Нічого не знайдено за цими умовами.</div>`;
+  countEl.textContent = list.length + ' ' + (list.length === 1 ? 'позиція' : 'позицій');
+}
+
+function renderCategoryPage(cat){
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-' + cat.id;
 
   el.innerHTML = `
-    <div class="page-head">
-      <h2>${cat.label}</h2>
-      <span class="count">${list.length} ${list.length === 1 ? 'позиція' : 'позицій'}</span>
+    <div class="page-toolbar">
+      <input type="search" class="search-input" id="search-${cat.id}" placeholder="Пошук по назві…" oninput="renderCategoryGrid(categories.find(c => c.id==='${cat.id}'))">
+      <select class="filter-select" id="filter-${cat.id}" onchange="renderCategoryGrid(categories.find(c => c.id==='${cat.id}'))">
+        <option value="all">Усі</option>
+        <option value="available">В наявності</option>
+        <option value="sold">Продані</option>
+      </select>
+      <select class="filter-select" id="sort-${cat.id}" onchange="renderCategoryGrid(categories.find(c => c.id==='${cat.id}'))">
+        <option value="new">Спочатку нові</option>
+        <option value="old">Спочатку старі</option>
+        <option value="az">За назвою (А-Я)</option>
+      </select>
+      <span class="count" id="count-${cat.id}"></span>
     </div>
-    <div class="card-grid">${cardsHtml}</div>
+    <div class="card-grid" id="grid-${cat.id}"></div>
   `;
   pagesEl.appendChild(el);
+  renderCategoryGrid(cat);
 }
 
 function renderDetailPage(){
@@ -340,11 +386,11 @@ function renderPageBanner(id){
     `;
   } else {
     banner.innerHTML = `
-      <div class="site-top">
+      <div class="site-top-with-title">
         <div class="brand"><div class="brand-mark">З<span class="brand-dot"></span></div></div>
+        <h1 class="page-banner-title">Знахідки <em>на двох</em></h1>
         <div class="social-links">${SOCIAL_ICONS_HTML}</div>
       </div>
-      <h1 class="page-banner-title">Знахідки <em>на двох</em></h1>
     `;
   }
 }
