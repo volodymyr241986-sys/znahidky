@@ -159,25 +159,26 @@ header.masthead{
   gap:10px;
 }
 .brand-mark{
-  width:36px;
-  height:36px;
+  width:50px;
+  height:50px;
   border-radius:50%;
   background:var(--accent);
   color:var(--bg);
   font-family:'Fraunces', serif;
   font-style:italic;
   font-weight:600;
-  font-size:18px;
+  font-size:24px;
   display:flex;
   align-items:center;
   justify-content:center;
   position:relative;
   flex-shrink:0;
+  box-shadow:0 4px 12px rgba(58,52,44,0.15);
 }
 .brand-dot{
   position:absolute;
-  top:3px; right:3px;
-  width:5px; height:5px;
+  top:5px; right:5px;
+  width:7px; height:7px;
   border-radius:50%;
   background:var(--accent-soft);
 }
@@ -192,6 +193,7 @@ header.masthead{
 }
 .social-links a:hover{ opacity:0.65; }
 .social-links svg{ width:19px; height:19px; }
+.social-links-light a{ color:#FBF6EE; }
 
 .masthead h1.page-banner-title{
   text-align:center;
@@ -202,25 +204,58 @@ header.masthead{
   font-weight:400;
   color:var(--accent);
 }
-.hero{
-  display:grid;
-  grid-template-columns:1.05fr 0.95fr;
-  gap:32px;
-  align-items:center;
+
+.hero-bleed{
+  position:relative;
+  border-radius:20px;
+  overflow:hidden;
+  height:320px;
   margin-bottom:24px;
 }
-@media (max-width:720px){ .hero{grid-template-columns:1fr;} }
-.hero-photo{
-  border-radius:16px;
-  overflow:hidden;
-  aspect-ratio:4/3;
-}
-.hero-photo img{
+.hero-bleed img{
   width:100%;
   height:100%;
   object-fit:cover;
   display:block;
 }
+.hero-bleed-overlay{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(100deg, rgba(58,52,44,0.72) 0%, rgba(58,52,44,0.42) 42%, rgba(58,52,44,0.05) 68%);
+}
+.hero-bleed-top{
+  position:absolute;
+  top:24px; left:28px; right:28px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.hero-bleed-text{
+  position:absolute;
+  left:28px; bottom:28px;
+  max-width:70%;
+}
+.hero-bleed-text .eyebrow{
+  color:#F0D9C9;
+  margin:0 0 8px 0;
+}
+.hero-bleed-text h1{
+  color:#FBF6EE;
+  margin:0;
+}
+.hero-bleed-text h1 em{
+  color:#E8A583;
+}
+.hero-bleed-counter{
+  position:absolute;
+  right:28px; bottom:28px;
+}
+@media (max-width:600px){
+  .hero-bleed{ height:280px; }
+  .hero-bleed-text{ max-width:85%; }
+  .hero-bleed-counter{ display:none; }
+}
+
 .counter-pill{
   display:inline-flex;
   align-items:baseline;
@@ -246,7 +281,7 @@ header.masthead{
 nav.tabs{
   display:flex;
   flex-wrap:wrap;
-  gap:6px;
+  gap:22px;
   margin-top:4px;
   padding-bottom:16px;
 }
@@ -256,28 +291,26 @@ nav.tabs button{
   letter-spacing:0.06em;
   text-transform:uppercase;
   background:transparent;
-  border:1px solid var(--line);
+  border:none;
+  border-bottom:2px solid transparent;
   color:var(--ink-soft);
-  padding:10px 16px;
+  padding:4px 0 8px 0;
   cursor:pointer;
   transition:all .18s ease;
-  border-radius:999px;
 }
 nav.tabs button:hover{
-  border-color:var(--accent);
   color:var(--accent-deep);
 }
 nav.tabs button.active{
-  background:var(--accent);
-  color:#fff;
-  font-weight:600;
-  border-color:var(--accent);
+  color:var(--accent-deep);
+  font-weight:700;
+  border-bottom-color:var(--accent);
 }
 nav.tabs button .tag-index{
   opacity:0.6;
   margin-right:6px;
 }
-nav.tabs button.active .tag-index{ color:#fff; opacity:0.85; }
+nav.tabs button.active .tag-index{ opacity:0.85; }
 
 main{
   padding:44px 40px 70px 40px;
