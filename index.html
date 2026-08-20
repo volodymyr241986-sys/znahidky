@@ -95,6 +95,12 @@ function truncateText(str, maxLen){
   return str.slice(0, maxLen).trim() + '…';
 }
 
+function scrollRecentList(dir){
+  const list = document.getElementById('recentList');
+  if (!list) return;
+  list.scrollBy({ left: dir * 330, behavior: 'smooth' });
+}
+
 function getRecentFinds(limit){
   const realCatIds = categories.filter(c => c.id !== 'about' && c.id !== 'articles').map(c => c.id);
   let all = [];
@@ -166,7 +172,11 @@ function renderAboutPage(){
 
     <div class="recent-strip">
       <h3>Нові знахідки</h3>
-      <div class="recent-list">${recentHtml}</div>
+      <div class="recent-carousel">
+        <button class="carousel-arrow" onclick="scrollRecentList(-1)" aria-label="Прокрутити вліво">‹</button>
+        <div class="recent-list" id="recentList">${recentHtml}</div>
+        <button class="carousel-arrow" onclick="scrollRecentList(1)" aria-label="Прокрутити вправо">›</button>
+      </div>
     </div>
 
     <div class="articles-strip">
@@ -411,7 +421,17 @@ function renderPageBanner(id){
         <img src="https://images.stockcake.com/public/8/e/a/8eaa13a5-dd94-4970-b8cf-043bc730c447_large/cozy-record-shelf-stockcake.jpg" alt="Затишна поличка з книгами та платівками">
         <div class="hero-bleed-overlay"></div>
         <div class="hero-bleed-top">
-          <div class="brand"><div class="brand-mark">З<span class="brand-dot"></span></div></div>
+          <div class="brand"><div class="logo-mark">
+            <svg class="logo-ring" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#7C8B6F" stroke-width="1.6"/></svg>
+            <div class="logo-dot"></div>
+            <div class="logo-circle">
+              <svg class="logo-book" viewBox="0 0 32 32" fill="none" stroke="#F0D9C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 8c-2.6-2-6-2.6-9-1.8v16.6c3-0.8 6.4-0.2 9 1.8"/>
+                <path d="M16 8c2.6-2 6-2.6 9-1.8v16.6c-3-0.8-6.4-0.2-9 1.8"/>
+              </svg>
+              <span class="logo-text">З<em>д</em></span>
+            </div>
+          </div></div>
           <div class="social-links social-links-light">${SOCIAL_ICONS_HTML}</div>
         </div>
         <div class="hero-bleed-text">
@@ -424,7 +444,17 @@ function renderPageBanner(id){
   } else {
     banner.innerHTML = `
       <div class="site-top-with-title">
-        <div class="brand"><div class="brand-mark">З<span class="brand-dot"></span></div></div>
+        <div class="brand"><div class="logo-mark">
+          <svg class="logo-ring" viewBox="0 0 60 60"><circle cx="30" cy="30" r="27" fill="none" stroke="#7C8B6F" stroke-width="1.6"/></svg>
+          <div class="logo-dot"></div>
+          <div class="logo-circle">
+            <svg class="logo-book" viewBox="0 0 32 32" fill="none" stroke="#F0D9C9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 8c-2.6-2-6-2.6-9-1.8v16.6c3-0.8 6.4-0.2 9 1.8"/>
+              <path d="M16 8c2.6-2 6-2.6 9-1.8v16.6c-3-0.8-6.4-0.2-9 1.8"/>
+            </svg>
+            <span class="logo-text">З<em>д</em></span>
+          </div>
+        </div></div>
         <h1 class="page-banner-title">Знахідки <em>на двох</em></h1>
         <div class="social-links">${SOCIAL_ICONS_HTML}</div>
       </div>
