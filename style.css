@@ -159,27 +159,27 @@ header.masthead{
   gap:10px;
 }
 .logo-mark{
-  width:60px;
-  height:60px;
+  width:72px;
+  height:72px;
   position:relative;
   flex-shrink:0;
 }
 .logo-ring{
   position:absolute;
   top:0; left:0;
-  width:60px; height:60px;
+  width:72px; height:72px;
 }
 .logo-dot{
   position:absolute;
-  top:1.5px; left:27.5px;
-  width:5px; height:5px;
+  top:2px; left:33px;
+  width:6px; height:6px;
   border-radius:50%;
   background:#7C8B6F;
 }
 .logo-circle{
   position:absolute;
-  top:6px; left:6px;
-  width:48px; height:48px;
+  top:7px; left:7px;
+  width:58px; height:58px;
   border-radius:50%;
   background:var(--accent);
   box-shadow:0 3px 8px rgba(58,52,44,0.15);
@@ -189,14 +189,14 @@ header.masthead{
 }
 .logo-book{
   position:absolute;
-  width:36px;
-  height:36px;
+  width:43px;
+  height:43px;
 }
 .logo-text{
   position:relative;
   font-family:'Fraunces', serif;
   font-weight:700;
-  font-size:11px;
+  font-size:13px;
   color:var(--bg);
 }
 .logo-text em{
