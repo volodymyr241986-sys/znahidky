@@ -317,10 +317,18 @@ function openDetail(catId, itemId){
 
   detailReturnTo = catId;
   const el = renderDetailPage();
+  const specsHtml = (it.specs && it.specs.length) ? `
+    <div class="specs-block">
+      ${it.specs.map(s => `<div class="specs-row"><span class="specs-key">${escapeHtml(s.key)}</span><span class="specs-value">${escapeHtml(s.value)}</span></div>`).join('')}
+    </div>
+  ` : '';
   el.innerHTML = `
     <button class="back-btn" onclick="closeDetail()">← Назад до «${cat.label}»</button>
     <div class="detail-grid">
-      <div class="detail-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <div class="detail-left">
+        <div class="detail-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+        ${specsHtml}
+      </div>
       <div class="detail-info">
         <span class="detail-cat-no">${cat.index} · ${cat.label}</span>
         <h2>${escapeHtml(it.title)}</h2>

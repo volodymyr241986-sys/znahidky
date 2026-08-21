@@ -77,6 +77,12 @@
       <div class="photo-preview" id="photoPreview">без фото</div>
     </div>
 
+    <div class="field">
+      <label>Характеристики (необов'язково)</label>
+      <div id="specsList"></div>
+      <button type="button" class="btn-secondary" id="addSpecBtn" style="margin-top:8px; width:100%;">+ додати характеристику</button>
+    </div>
+
     <div class="modal-status" id="modalStatus"></div>
 
     <div class="modal-actions">
@@ -561,6 +567,45 @@ async function deleteItem(catId, itemId){
 }
 
 // ===================== МОДАЛКА ДОДАВАННЯ/РЕДАГУВАННЯ =====================
+let currentSpecs = [];
+const SPEC_SUGGESTIONS = {
+  books: ['Видавництво','Рік видання','Кількість сторінок','Мова','Тип палітурки','Стан'],
+  ceramics: ['Матеріал','Виробник / клеймо','Рік або період випуску','Розміри','Стан'],
+  paintings: ['Художник','Техніка','Розміри','Рік створення','Наявність рами','Стан'],
+  vinyl: ['Лейбл/студія','Рік випуску','Оригінал чи перевидання','Стан платівки','Стан конверта','Швидкість (об/хв)'],
+  other: ['Матеріал','Рік/період','Розміри','Стан']
+};
+
+function renderSpecsList(){
+  const wrap = document.getElementById('specsList');
+  const suggestions = SPEC_SUGGESTIONS[currentCatForModal] || SPEC_SUGGESTIONS.other;
+  wrap.innerHTML = currentSpecs.map((s, i) => `
+    <div class="spec-row">
+      <input type="text" class="spec-key" placeholder="${suggestions[i % suggestions.length]}" value="${escapeHtml(s.key)}" oninput="updateSpec(${i}, 'key', this.value)">
+      <input type="text" class="spec-value" placeholder="значення" value="${escapeHtml(s.value)}" oninput="updateSpec(${i}, 'value', this.value)">
+      <button type="button" class="spec-remove" onclick="removeSpecRow(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function addSpecRow(){
+  currentSpecs.push({ key:'', value:'' });
+  renderSpecsList();
+  const inputs = document.querySelectorAll('#specsList .spec-key');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function updateSpec(index, field, value){
+  if (currentSpecs[index]) currentSpecs[index][field] = value;
+}
+
+function removeSpecRow(index){
+  currentSpecs.splice(index, 1);
+  renderSpecsList();
+}
+
+document.getElementById('addSpecBtn').addEventListener('click', addSpecRow);
+
 function openModal(catId, itemId){
   currentCatForModal = catId;
   editingItemId = itemId || null;
@@ -575,6 +620,9 @@ function openModal(catId, itemId){
   document.getElementById('fNote').value = existing ? (existing.note || '') : '';
   document.getElementById('fStatus').value = existing ? existing.status : 'available';
   document.getElementById('fPhoto').value = '';
+
+  currentSpecs = existing && existing.specs ? JSON.parse(JSON.stringify(existing.specs)) : [];
+  renderSpecsList();
 
   if (existing && existing.photo){
     pendingPhotoDataUrl = existing.photo;
@@ -634,7 +682,8 @@ document.getElementById('saveBtn').addEventListener('click', () => {
     place: document.getElementById('fPlace').value.trim(),
     note: document.getElementById('fNote').value.trim(),
     status: document.getElementById('fStatus').value,
-    photo: pendingPhotoDataUrl
+    photo: pendingPhotoDataUrl,
+    specs: currentSpecs.filter(s => s.key.trim() || s.value.trim()).map(s => ({ key: s.key.trim(), value: s.value.trim() }))
   };
 
   let wasOnDetailPage = document.getElementById('page-detail') && document.getElementById('page-detail').classList.contains('active');
