@@ -124,6 +124,59 @@
   </div>
 </div>
 
+<!-- Модалка "Минуле в деталях" -->
+<div class="modal-overlay" id="storyModalOverlay">
+  <div class="modal">
+    <h3>Минуле в деталях</h3>
+    <p class="modal-sub">Детальна історія однієї речі — з'явиться на головній сторінці між "Новими знахідками" та "Історіями".</p>
+
+    <div class="field">
+      <label>Назва речі</label>
+      <input type="text" id="sTitle" placeholder="напр. Чашка з квітковим орнаментом">
+    </div>
+    <div class="field">
+      <label>Підзаголовок (матеріал, період)</label>
+      <input type="text" id="sSubtitle" placeholder="напр. Фарфор, кінець XIX ст.">
+    </div>
+
+    <div class="field">
+      <label>01. Знайшли</label>
+      <textarea id="sStep0" placeholder="Де і як знайшли" style="min-height:48px;"></textarea>
+    </div>
+    <div class="field">
+      <label>02. Помітили</label>
+      <textarea id="sStep1" placeholder="Що привернуло увагу" style="min-height:48px;"></textarea>
+    </div>
+    <div class="field">
+      <label>03. Дізналися</label>
+      <textarea id="sStep2" placeholder="Що вдалося з'ясувати" style="min-height:48px;"></textarea>
+    </div>
+    <div class="field">
+      <label>04. Зберегли</label>
+      <textarea id="sStep3" placeholder="Де і як тепер зберігається" style="min-height:48px;"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Повний текст (сторінка "Читати повністю")</label>
+      <textarea id="sFullText" placeholder="Розгорнута історія цієї речі" style="min-height:140px;"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Фото (необов'язково)</label>
+      <input type="file" id="sPhoto" accept="image/*">
+      <div class="photo-preview" id="sPhotoPreview">без фото</div>
+    </div>
+
+    <div class="modal-status" id="storyModalStatus"></div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="storyCancelBtn">Скасувати</button>
+      <button class="btn-primary" id="storySaveBtn">Зберегти</button>
+    </div>
+    <button type="button" class="icon-btn danger" id="storyRemoveBtn" style="margin-top:14px; width:100%;">Прибрати блок з сайту</button>
+  </div>
+</div>
+
 <!-- Модалка публікації -->
 <div class="modal-overlay" id="publishOverlay">
   <div class="modal">
@@ -204,7 +257,7 @@ const categories = [
 ];
 
 const DRAFT_KEY = 'znahidky_admin_draft';
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null, storyOfThing:null };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -353,7 +406,19 @@ function renderArticlesAdminPage(){
     </article>
   `).join('') : `<div class="empty-note">Статей поки немає.</div>`;
 
+  const s = items.storyOfThing;
+  const storyStatusText = (s && s.title)
+    ? `Зараз показано: «${escapeHtml(s.title)}»`
+    : 'Блок ще не заповнено — на сайті він не з\'явиться, поки ви його не додасте.';
+  const storyBtnLabel = (s && s.title) ? 'Редагувати' : '+ Додати';
+
   el.innerHTML = `
+    <div class="signature-block" style="margin-bottom:28px;">
+      <span class="stamp">Минуле в деталях</span>
+      <p style="font-size:14px; color:var(--ink-soft); margin:0 0 14px 0;">${storyStatusText}</p>
+      <button class="btn-secondary" onclick="openStoryModal()">${storyBtnLabel}</button>
+    </div>
+
     <div class="page-head">
       <h2>Історії</h2>
       <div class="head-right">
@@ -469,6 +534,101 @@ async function deleteArticle(articleId){
   saveDraft();
 }
 
+// ===================== МИНУЛЕ В ДЕТАЛЯХ (адмін) =====================
+let pendingStoryPhotoDataUrl = null;
+
+function openStoryModal(){
+  const s = items.storyOfThing || {};
+  pendingStoryPhotoDataUrl = s.photo || null;
+  const steps = s.steps || [];
+
+  document.getElementById('sTitle').value = s.title || '';
+  document.getElementById('sSubtitle').value = s.subtitle || '';
+  document.getElementById('sStep0').value = (steps[0] && steps[0].desc) || '';
+  document.getElementById('sStep1').value = (steps[1] && steps[1].desc) || '';
+  document.getElementById('sStep2').value = (steps[2] && steps[2].desc) || '';
+  document.getElementById('sStep3').value = (steps[3] && steps[3].desc) || '';
+  document.getElementById('sFullText').value = s.fullText || '';
+  document.getElementById('sPhoto').value = '';
+  document.getElementById('sPhotoPreview').innerHTML = s.photo ? `<img src="${s.photo}" alt="">` : 'без фото';
+
+  document.getElementById('storyModalStatus').textContent = '';
+  document.getElementById('storyModalOverlay').classList.add('open');
+}
+
+function closeStoryModal(){
+  document.getElementById('storyModalOverlay').classList.remove('open');
+}
+
+document.getElementById('storyCancelBtn').addEventListener('click', closeStoryModal);
+document.getElementById('storyModalOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('storyModalOverlay')) closeStoryModal();
+});
+
+document.getElementById('sPhoto').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const preview = document.getElementById('sPhotoPreview');
+  preview.textContent = 'обробка фото…';
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      pendingStoryPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      preview.innerHTML = `<img src="${pendingStoryPhotoDataUrl}" alt="">`;
+    };
+    img.onerror = () => { preview.textContent = 'не вдалося прочитати фото'; };
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => { preview.textContent = 'не вдалося прочитати файл'; };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('storySaveBtn').addEventListener('click', () => {
+  const title = document.getElementById('sTitle').value.trim();
+  if (!title){
+    document.getElementById('storyModalStatus').textContent = 'Вкажіть назву речі.';
+    return;
+  }
+
+  items.storyOfThing = {
+    title,
+    subtitle: document.getElementById('sSubtitle').value.trim(),
+    steps: [
+      { desc: document.getElementById('sStep0').value.trim() },
+      { desc: document.getElementById('sStep1').value.trim() },
+      { desc: document.getElementById('sStep2').value.trim() },
+      { desc: document.getElementById('sStep3').value.trim() }
+    ],
+    fullText: document.getElementById('sFullText').value.trim(),
+    photo: pendingStoryPhotoDataUrl
+  };
+
+  renderArticlesAdminPage();
+  const ok = saveDraft();
+  if (ok){
+    closeStoryModal();
+  } else {
+    document.getElementById('storyModalStatus').textContent = 'Не вдалося зберегти (можливо, забагато фото займають місце).';
+  }
+});
+
+document.getElementById('storyRemoveBtn').addEventListener('click', () => {
+  if (!confirm('Прибрати блок "Минуле в деталях" з сайту?')) return;
+  items.storyOfThing = null;
+  renderArticlesAdminPage();
+  saveDraft();
+  closeStoryModal();
+});
+
 function renderDetailPage(){
   let el = document.getElementById('page-detail');
   if (!el){
@@ -558,6 +718,7 @@ async function loadDraft(){
       items = JSON.parse(raw);
       if (!items.articles) items.articles = [];
       if (items.featured === undefined) items.featured = null;
+      if (items.storyOfThing === undefined) items.storyOfThing = null;
       return;
     }
   }catch(e){ /* ignore */ }
@@ -568,6 +729,7 @@ async function loadDraft(){
       items = await res.json();
       if (!items.articles) items.articles = [];
       if (items.featured === undefined) items.featured = null;
+      if (items.storyOfThing === undefined) items.storyOfThing = null;
     }
   }catch(e){ /* нема опублікованих даних — стартуємо з порожнього каталогу */ }
 }
