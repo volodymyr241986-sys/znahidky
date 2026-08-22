@@ -66,11 +66,11 @@ const categories = [
   { id:'paintings',label:'Картини',               index:'03' },
   { id:'vinyl',    label:'Вініл',                 index:'04' },
   { id:'other',    label:'Інше',                  index:'05' },
-  { id:'articles', label:'Статті',                index:'06' },
+  { id:'articles', label:'Історії',               index:'06' },
 ];
 
 // Публічна сторінка завантажує опубліковані дані з data.json (без кешу браузера).
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[] };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -125,6 +125,72 @@ function getRecentArticles(limit){
   return all.slice(0, limit);
 }
 
+const UK_MONTHS = ['Січень','Лютий','Березень','Квітень','Травень','Червень','Липень','Серпень','Вересень','Жовтень','Листопад','Грудень'];
+
+function formatMonthYear(ts){
+  if (!ts) return '';
+  const d = new Date(ts);
+  return UK_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function buildFeaturedFindHtml(){
+  if (!items.featured || !items.featured.catId || !items.featured.itemId) return '';
+  const cat = categories.find(c => c.id === items.featured.catId);
+  const it = (items[items.featured.catId] || []).find(x => x.id === items.featured.itemId);
+  if (!cat || !it) return '';
+
+  const ts = getItemTs(it);
+  const dateStr = formatMonthYear(ts);
+  const subtitle = (it.specs && it.specs.length)
+    ? it.specs.slice(0, 2).map(s => s.value).filter(Boolean).join('. ')
+    : cat.label;
+
+  return `
+    <div class="featured-find">
+      <span class="eyebrow">Знахідка місяця</span>
+      <div class="featured-find-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <h3>${escapeHtml(it.title)}</h3>
+      ${subtitle ? `<p class="featured-find-subtitle">${escapeHtml(subtitle)}</p>` : ''}
+      <p class="featured-find-desc">${escapeHtml(truncateText(it.note, 160))}</p>
+      <button class="read-btn" onclick="openDetail('${cat.id}','${it.id}')">Дізнатися історію →</button>
+      <div class="featured-find-meta">
+        ${it.place ? `<span>📍 ${escapeHtml(it.place)}</span>` : ''}
+        ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+const STATS_CATEGORIES = ['books','ceramics','paintings','vinyl','other'];
+
+function buildStatsHtml(){
+  const total = STATS_CATEGORIES.reduce((sum, id) => sum + (items[id] || []).length, 0);
+  const cellsHtml = STATS_CATEGORIES.map(catId => {
+    const cat = categories.find(c => c.id === catId);
+    const count = (items[catId] || []).length;
+    return `
+      <div class="stat-cell" onclick="showPage('${catId}')">
+        <div class="stat-icon">${icons[catId] || icons.other}</div>
+        <span class="stat-num">${count}</span>
+        <span class="stat-label">${cat.label.toLowerCase()}</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="stats-block">
+      <h3>Наша колекція в цифрах</h3>
+      <div class="stats-grid">
+        ${cellsHtml}
+        <div class="stat-cell stat-cell-total">
+          <span class="stat-num">${total}</span>
+          <span class="stat-label">знахідок загалом</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderAboutPage(){
   const el = document.createElement('section');
   el.className = 'page';
@@ -148,7 +214,10 @@ function renderAboutPage(){
       <p>${escapeHtml(a.excerpt || '')}</p>
       <button class="read-btn" onclick="openArticleDetail('${a.id}')">Читати →</button>
     </div>
-  `).join('') : `<div class="empty-note">Статей поки немає — скоро тут щось з'явиться.</div>`;
+  `).join('') : `<div class="empty-note">Історій поки немає — скоро тут щось з'явиться.</div>`;
+
+  const featuredFindHtml = buildFeaturedFindHtml();
+  const statsHtml = buildStatsHtml();
 
   el.innerHTML = `
     <div class="about-grid">
@@ -170,6 +239,13 @@ function renderAboutPage(){
       </div>
     </div>
 
+    ${(featuredFindHtml || statsHtml) ? `
+    <div class="featured-grid">
+      ${featuredFindHtml}
+      ${statsHtml}
+    </div>
+    ` : ''}
+
     <div class="recent-strip">
       <h3>Нові знахідки</h3>
       <div class="recent-carousel">
@@ -180,7 +256,7 @@ function renderAboutPage(){
     </div>
 
     <div class="articles-strip">
-      <h3>Статті</h3>
+      <h3>Історії</h3>
       <div class="articles-preview-grid">${articlesHtml}</div>
     </div>
   `;
@@ -366,8 +442,8 @@ function renderArticlesPage(){
 
   el.innerHTML = `
     <div class="page-head">
-      <h2>Статті</h2>
-      <span class="count">${list.length} ${list.length === 1 ? 'стаття' : 'статей'}</span>
+      <h2>Історії</h2>
+      <span class="count">${list.length} ${list.length === 1 ? 'історія' : 'історій'}</span>
     </div>
     <div class="card-grid">${cardsHtml}</div>
   `;
@@ -392,7 +468,7 @@ function openArticleDetail(articleId){
   detailReturnTo = 'articles';
   const el = renderArticleDetailPage();
   el.innerHTML = `
-    <button class="back-btn" onclick="closeDetail()">← Назад до «Статті»</button>
+    <button class="back-btn" onclick="closeDetail()">← Назад до «Історії»</button>
     <div class="detail-grid">
       <div class="detail-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
       <div class="detail-info">
@@ -496,7 +572,7 @@ async function init(){
     else renderCategoryPage(cat);
   });
 
-  totalItemsCount = Object.values(items).reduce((sum, arr) => sum + arr.length, 0);
+  totalItemsCount = STATS_CATEGORIES.reduce((sum, id) => sum + (items[id] || []).length, 0);
   document.getElementById('footer-count').textContent = totalItemsCount + ' знахідок у каталозі';
 
   showPage('about');

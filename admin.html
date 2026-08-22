@@ -95,7 +95,7 @@
 <!-- Модалка додавання/редагування статті -->
 <div class="modal-overlay" id="articleModalOverlay">
   <div class="modal">
-    <h3 id="articleModalTitle">Нова стаття</h3>
+    <h3 id="articleModalTitle">Нова історія</h3>
 
     <div class="field">
       <label>Заголовок</label>
@@ -103,7 +103,7 @@
     </div>
     <div class="field">
       <label>Короткий опис (буде показано в стрічці)</label>
-      <textarea id="aExcerpt" placeholder="2-3 речення, які підсумовують статтю" style="min-height:56px;"></textarea>
+      <textarea id="aExcerpt" placeholder="2-3 речення, які підсумовують історію" style="min-height:56px;"></textarea>
     </div>
     <div class="field">
       <label>Повний текст статті</label>
@@ -200,11 +200,11 @@ const categories = [
   { id:'paintings',label:'Картини',               index:'03' },
   { id:'vinyl',    label:'Вініл',                 index:'04' },
   { id:'other',    label:'Інше',                  index:'05' },
-  { id:'articles', label:'Статті',                index:'06' },
+  { id:'articles', label:'Історії',               index:'06' },
 ];
 
 const DRAFT_KEY = 'znahidky_admin_draft';
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[] };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -223,10 +223,21 @@ categories.forEach(cat => {
   tabsEl.appendChild(btn);
 });
 
+const REAL_CATEGORY_IDS = ['books','ceramics','paintings','vinyl','other'];
+
 function renderAboutPage(){
   const el = document.createElement('section');
   el.className = 'page';
   el.id = 'page-about';
+
+  const featuredOptionsHtml = REAL_CATEGORY_IDS.map(catId => {
+    const cat = categories.find(c => c.id === catId);
+    const list = items[catId] || [];
+    if (!list.length) return '';
+    const opts = list.map(it => `<option value="${catId}::${it.id}"${items.featured && items.featured.catId === catId && items.featured.itemId === it.id ? ' selected' : ''}>${escapeHtml(it.title)}</option>`).join('');
+    return `<optgroup label="${cat.label}">${opts}</optgroup>`;
+  }).join('');
+
   el.innerHTML = `
     <div class="about-grid">
       <div>
@@ -245,8 +256,27 @@ function renderAboutPage(){
         </ul>
       </div>
     </div>
+
+    <div class="signature-block" style="margin-top:32px;">
+      <span class="stamp">Знахідка місяця</span>
+      <p style="font-size:14px; color:var(--ink-soft); margin:0 0 14px 0;">Оберіть, яку знахідку показувати у блоці "Знахідка місяця" на публічній сторінці.</p>
+      <select id="featuredSelect" onchange="setFeatured(this.value)" style="width:100%; font-family:'Source Serif 4', Georgia, serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--paper-card); color:var(--ink);">
+        <option value="">— не вибрано —</option>
+        ${featuredOptionsHtml}
+      </select>
+    </div>
   `;
   pagesEl.appendChild(el);
+}
+
+function setFeatured(value){
+  if (!value){
+    items.featured = null;
+  } else {
+    const [catId, itemId] = value.split('::');
+    items.featured = { catId, itemId };
+  }
+  saveDraft();
 }
 
 function renderCategoryPage(cat){
@@ -325,10 +355,10 @@ function renderArticlesAdminPage(){
 
   el.innerHTML = `
     <div class="page-head">
-      <h2>Статті</h2>
+      <h2>Історії</h2>
       <div class="head-right">
-        <span class="count">${list.length} ${list.length === 1 ? 'стаття' : 'статей'}</span>
-        <button class="add-btn" onclick="openArticleModal()">+ Додати статтю</button>
+        <span class="count">${list.length} ${list.length === 1 ? 'історія' : 'історій'}</span>
+        <button class="add-btn" onclick="openArticleModal()">+ Додати історію</button>
       </div>
     </div>
     <div class="card-grid">${cardsHtml}</div>
@@ -343,7 +373,7 @@ function openArticleModal(articleId){
   pendingArticlePhotoDataUrl = null;
   const existing = articleId ? (items.articles || []).find(a => a.id === articleId) : null;
 
-  document.getElementById('articleModalTitle').textContent = existing ? 'Редагувати статтю' : 'Нова стаття';
+  document.getElementById('articleModalTitle').textContent = existing ? 'Редагувати історію' : 'Нова історія';
   document.getElementById('aTitle').value = existing ? existing.title : '';
   document.getElementById('aExcerpt').value = existing ? (existing.excerpt || '') : '';
   document.getElementById('aContent').value = existing ? (existing.content || '') : '';
@@ -433,7 +463,7 @@ document.getElementById('articleSaveBtn').addEventListener('click', () => {
 });
 
 async function deleteArticle(articleId){
-  if (!confirm('Видалити цю статтю?')) return;
+  if (!confirm('Видалити цю історію?')) return;
   items.articles = (items.articles || []).filter(a => a.id !== articleId);
   renderArticlesAdminPage();
   saveDraft();
@@ -527,6 +557,7 @@ async function loadDraft(){
     if (raw){
       items = JSON.parse(raw);
       if (!items.articles) items.articles = [];
+      if (items.featured === undefined) items.featured = null;
       return;
     }
   }catch(e){ /* ignore */ }
@@ -536,6 +567,7 @@ async function loadDraft(){
     if (res.ok){
       items = await res.json();
       if (!items.articles) items.articles = [];
+      if (items.featured === undefined) items.featured = null;
     }
   }catch(e){ /* нема опублікованих даних — стартуємо з порожнього каталогу */ }
 }

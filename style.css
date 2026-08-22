@@ -404,6 +404,121 @@ main{
 }
 .signature-block li strong{color:var(--ink);}
 
+.featured-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:28px;
+  margin-top:44px;
+  padding-top:36px;
+  border-top:1px solid var(--line);
+}
+@media (max-width:800px){ .featured-grid{ grid-template-columns:1fr; } }
+
+.featured-find{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:26px;
+}
+.featured-find .eyebrow{ margin:0 0 14px 0; }
+.featured-find-photo{
+  width:100%;
+  aspect-ratio:4/3;
+  border-radius:12px;
+  background:var(--accent-soft);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  margin-bottom:16px;
+}
+.featured-find-photo svg{ width:34%; height:34%; }
+.featured-find-photo img{ width:100%; height:100%; object-fit:contain; }
+.featured-find h3{
+  font-family:'Fraunces', serif;
+  font-size:24px;
+  font-weight:600;
+  margin:0 0 6px 0;
+}
+.featured-find-subtitle{
+  font-style:italic;
+  color:var(--ink-soft);
+  font-size:14px;
+  margin:0 0 12px 0;
+}
+.featured-find-desc{
+  font-size:14.5px;
+  line-height:1.6;
+  color:var(--ink-soft);
+  margin:0 0 18px 0;
+}
+.featured-find-meta{
+  display:flex;
+  gap:16px;
+  margin-top:16px;
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  color:var(--ink-soft);
+  flex-wrap:wrap;
+}
+
+.stats-block{
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:26px;
+}
+.stats-block h3{
+  font-family:'Fraunces', serif;
+  font-size:20px;
+  font-weight:600;
+  text-align:center;
+  margin:0 0 20px 0;
+}
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+}
+.stat-cell{
+  background:var(--paper-dim);
+  border-radius:12px;
+  padding:16px 8px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.stat-cell:hover{
+  transform:scale(1.06);
+  box-shadow:0 8px 18px rgba(58,52,44,0.14);
+}
+.stat-icon{ width:26px; height:26px; }
+.stat-icon svg{ width:100%; height:100%; }
+.stat-num{
+  font-family:'Fraunces', serif;
+  font-weight:700;
+  font-size:22px;
+  color:var(--ink);
+}
+.stat-label{
+  font-family:'Space Mono', monospace;
+  font-size:10px;
+  letter-spacing:0.03em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  text-align:center;
+}
+.stat-cell-total{
+  background:var(--sage);
+}
+.stat-cell-total .stat-num,
+.stat-cell-total .stat-label{
+  color:#fff;
+}
+
 .recent-strip{
   margin-top:48px;
   padding-top:32px;
