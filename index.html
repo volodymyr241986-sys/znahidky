@@ -147,15 +147,19 @@ function buildFeaturedFindHtml(){
 
   return `
     <div class="featured-find">
-      <span class="eyebrow">Знахідка місяця</span>
-      <div class="featured-find-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
-      <h3>${escapeHtml(it.title)}</h3>
-      ${subtitle ? `<p class="featured-find-subtitle">${escapeHtml(subtitle)}</p>` : ''}
-      <p class="featured-find-desc">${escapeHtml(truncateText(it.note, 160))}</p>
-      <button class="read-btn" onclick="openDetail('${cat.id}','${it.id}')">Дізнатися історію →</button>
-      <div class="featured-find-meta">
-        ${it.place ? `<span>📍 ${escapeHtml(it.place)}</span>` : ''}
-        ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
+      <h3 class="section-title">Знахідка місяця</h3>
+      <div class="featured-find-body">
+        <div class="featured-find-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+        <div class="featured-find-content">
+          <h4>${escapeHtml(it.title)}</h4>
+          ${subtitle ? `<p class="featured-find-subtitle">${escapeHtml(subtitle)}</p>` : ''}
+          <p class="featured-find-desc">${escapeHtml(truncateText(it.note, 130))}</p>
+          <button class="read-btn" onclick="openDetail('${cat.id}','${it.id}')">Дізнатися історію →</button>
+          <div class="featured-find-meta">
+            ${it.place ? `<span>📍 ${escapeHtml(it.place)}</span>` : ''}
+            ${dateStr ? `<span>📅 ${dateStr}</span>` : ''}
+          </div>
+        </div>
       </div>
     </div>
   `;
