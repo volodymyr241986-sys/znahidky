@@ -225,8 +225,8 @@ function buildPastInDetailHtml(){
   return `
     <div class="past-detail">
       <div class="past-detail-left">
-        <span class="eyebrow">Історія однієї речі</span>
-        <h3>${escapeHtml(a.title)}</h3>
+        <h3 class="section-title past-detail-heading">Минуле в деталях</h3>
+        <h4 class="past-detail-title">${escapeHtml(a.title)}</h4>
         ${a.subtitle ? `<p class="past-detail-subtitle">${escapeHtml(a.subtitle)}</p>` : ''}
         <div class="timeline-row">${stepsHtml}</div>
       </div>
