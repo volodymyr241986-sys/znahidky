@@ -28,8 +28,43 @@
 
 </div>
 
+<div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox(event)" aria-label="Закрити">×</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
 <script>
 // ===================== ІКОНКИ ПО КАТЕГОРІЯХ =====================
+// ===================== ЛАЙТБОКС =====================
+function openLightbox(src){
+  if (!src) return;
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox(e){
+  if (e && e.target.id !== 'lightboxOverlay' && !e.target.classList.contains('lightbox-close')) return;
+  document.getElementById('lightboxOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeLightbox({ target: { id: 'lightboxOverlay' } });
+});
+
+// ===================== ПЛАВНА ПОЯВА ПРИ СКРОЛІ =====================
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting){
+      entry.target.classList.add('in-view');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+function observeReveals(root){
+  (root || document).querySelectorAll('.reveal:not(.in-view)').forEach(el => revealObserver.observe(el));
+}
+
 const icons = {
   books: `<svg viewBox="0 0 64 64" fill="none" stroke="#9C4A2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
     <path d="M32 14c-6-5-14-6-20-4v34c6-2 14-1 20 4"/>
@@ -149,7 +184,7 @@ function buildFeaturedFindHtml(){
     <div class="featured-find">
       <h3 class="section-title">Знахідка місяця</h3>
       <div class="featured-find-body">
-        <div class="featured-find-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+        <div class="featured-find-photo"${it.photo ? ` onclick="openLightbox('${it.photo}')" style="cursor:zoom-in;"` : ''}>${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
         <div class="featured-find-content">
           <h4>${escapeHtml(it.title)}</h4>
           ${subtitle ? `<p class="featured-find-subtitle">${escapeHtml(subtitle)}</p>` : ''}
@@ -232,7 +267,7 @@ function buildPastInDetailHtml(){
       </div>
       <div class="past-detail-right">
         <button class="read-btn past-detail-btn" onclick="openArticleDetail('${a.id}')">Читати повністю →</button>
-        <div class="past-detail-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+        <div class="past-detail-photo"${a.photo ? ` onclick="openLightbox('${a.photo}')" style="cursor:zoom-in;"` : ''}>${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
       </div>
     </div>
   `;
@@ -244,9 +279,9 @@ function renderAboutPage(){
   el.id = 'page-about';
 
   const recent = getRecentFinds(6);
-  const recentHtml = recent.length ? recent.map(it => {
+  const recentHtml = recent.length ? recent.map((it, i) => {
     return `
-      <div class="recent-card" onclick="openDetail('${it.catId}','${it.id}')">
+      <div class="recent-card reveal" style="--i:${i}" onclick="openDetail('${it.catId}','${it.id}')">
         <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}</div>
         <p>${escapeHtml(it.title)}</p>
       </div>
@@ -254,8 +289,8 @@ function renderAboutPage(){
   }).join('') : `<div class="empty-note">Знахідок поки немає — скоро тут щось з'явиться.</div>`;
 
   const recentArticles = getRecentArticles(2);
-  const articlesHtml = recentArticles.length ? recentArticles.map(a => `
-    <div class="article-preview">
+  const articlesHtml = recentArticles.length ? recentArticles.map((a, i) => `
+    <div class="article-preview reveal" style="--i:${i}">
       <div class="article-preview-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
       <h4>${escapeHtml(a.title)}</h4>
       <p>${escapeHtml(a.excerpt || '')}</p>
@@ -267,7 +302,7 @@ function renderAboutPage(){
   const statsHtml = buildStatsHtml();
 
   el.innerHTML = `
-    <div class="about-grid">
+    <div class="about-grid reveal">
       <div>
         <h2>Про нас</h2>
         <p>Ми збираємо старі речі — не заради колекції на полиці, а заради історій, які до них додаються. Книга з чиїмось підписом на форзаці, тарілка з тріщинкою від часу, платівка з подряпиною, яку чути тільки на другій доріжці.</p>
@@ -287,13 +322,13 @@ function renderAboutPage(){
     </div>
 
     ${(featuredFindHtml || statsHtml) ? `
-    <div class="featured-grid">
+    <div class="featured-grid reveal">
       ${featuredFindHtml}
       ${statsHtml}
     </div>
     ` : ''}
 
-    <div class="recent-strip">
+    <div class="recent-strip reveal">
       <h3>Нові знахідки</h3>
       <div class="recent-carousel">
         <button class="carousel-arrow" onclick="scrollRecentList(-1)" aria-label="Прокрутити вліво">‹</button>
@@ -304,17 +339,18 @@ function renderAboutPage(){
 
     ${buildPastInDetailHtml()}
 
-    <div class="articles-strip">
+    <div class="articles-strip reveal">
       <h3>Історії</h3>
       <div class="articles-preview-grid">${articlesHtml}</div>
     </div>
   `;
   pagesEl.appendChild(el);
+  observeReveals(el);
 }
 
 function buildCardHtml(cat, it, i){
   return `
-    <article class="find-card" onclick="openDetail('${cat.id}','${it.id}')">
+    <article class="find-card reveal" style="--i:${i % 8}" onclick="openDetail('${cat.id}','${it.id}')">
       <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
       <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
       <h3>${escapeHtml(it.title)}</h3>
@@ -359,6 +395,7 @@ function renderCategoryGrid(cat){
 
   grid.innerHTML = list.length ? list.map((it, i) => buildCardHtml(cat, it, i)).join('') : `<div class="empty-note">Нічого не знайдено за цими умовами.</div>`;
   countEl.textContent = list.length + ' ' + (list.length === 1 ? 'позиція' : 'позицій');
+  observeReveals(grid);
 }
 
 // ===================== ВЛАСНИЙ ДРОПДАВН =====================
@@ -450,11 +487,11 @@ function openDetail(catId, itemId){
   el.innerHTML = `
     <button class="back-btn" onclick="closeDetail()">← Назад до «${cat.label}»</button>
     <div class="detail-grid">
-      <div class="detail-left">
-        <div class="detail-photo">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <div class="detail-left reveal">
+        <div class="detail-photo"${it.photo ? ` onclick="openLightbox('${it.photo}')" style="cursor:zoom-in;"` : ''}>${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
         ${specsHtml}
       </div>
-      <div class="detail-info">
+      <div class="detail-info reveal" style="--i:1">
         <span class="detail-cat-no">${cat.index} · ${cat.label}</span>
         <h2>${escapeHtml(it.title)}</h2>
         <div class="detail-meta-row">
@@ -469,6 +506,7 @@ function openDetail(catId, itemId){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  observeReveals(el);
 }
 
 function closeDetail(){
@@ -481,8 +519,8 @@ function renderArticlesPage(){
   el.id = 'page-articles';
   const list = getRecentArticles(999);
 
-  const cardsHtml = list.length ? list.map(a => `
-    <article class="find-card" onclick="openArticleDetail('${a.id}')">
+  const cardsHtml = list.length ? list.map((a, i) => `
+    <article class="find-card reveal" style="--i:${i % 8}" onclick="openArticleDetail('${a.id}')">
       <div class="thumb">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
       <h3>${escapeHtml(a.title)}</h3>
       <p>${escapeHtml(truncateText(a.excerpt, 100))}</p>
@@ -497,6 +535,7 @@ function renderArticlesPage(){
     <div class="card-grid">${cardsHtml}</div>
   `;
   pagesEl.appendChild(el);
+  observeReveals(el);
 }
 
 function renderArticleDetailPage(){
@@ -519,8 +558,8 @@ function openArticleDetail(articleId){
   el.innerHTML = `
     <button class="back-btn" onclick="closeDetail()">← Назад до «Історії»</button>
     <div class="detail-grid">
-      <div class="detail-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
-      <div class="detail-info">
+      <div class="detail-photo reveal"${a.photo ? ` onclick="openLightbox('${a.photo}')" style="cursor:zoom-in;"` : ''}>${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+      <div class="detail-info reveal" style="--i:1">
         <h2>${escapeHtml(a.title)}</h2>
         <p class="note">${escapeHtml(a.content || a.excerpt || '')}</p>
       </div>
@@ -530,6 +569,7 @@ function openArticleDetail(articleId){
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  observeReveals(el);
 }
 
 let totalItemsCount = 0;
