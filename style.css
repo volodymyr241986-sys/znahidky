@@ -630,6 +630,87 @@ main{
   overflow:hidden;
 }
 
+.past-detail{
+  margin-top:40px;
+  padding-top:32px;
+  border-top:1px solid var(--line);
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:28px;
+  display:grid;
+  grid-template-columns:1.3fr 0.7fr;
+  gap:28px;
+  align-items:start;
+}
+@media (max-width:800px){ .past-detail{ grid-template-columns:1fr; } }
+.past-detail-left .eyebrow{ margin:0 0 6px 0; }
+.past-detail-left h3{
+  font-family:'Fraunces', serif;
+  font-size:26px;
+  font-weight:600;
+  margin:0 0 4px 0;
+}
+.past-detail-subtitle{
+  font-size:14px;
+  color:var(--ink-soft);
+  margin:0 0 20px 0;
+}
+.timeline-row{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:16px;
+}
+@media (max-width:600px){ .timeline-row{ grid-template-columns:1fr 1fr; } }
+.timeline-step{ text-align:left; }
+.timeline-icon{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:1px solid var(--accent-soft);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:10px;
+}
+.timeline-icon svg{ width:17px; height:17px; }
+.timeline-step-label{
+  font-family:'Space Mono', monospace;
+  font-size:11px;
+  font-weight:700;
+  color:var(--ink);
+  margin:0 0 4px 0;
+}
+.timeline-step-text{
+  font-size:12.5px;
+  line-height:1.5;
+  color:var(--ink-soft);
+  margin:0;
+}
+.past-detail-right{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:16px;
+}
+.past-detail-btn{ white-space:nowrap; }
+.past-detail-photo{
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:14px;
+  background:var(--accent-soft);
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.past-detail-photo svg{ width:32%; height:32%; }
+.past-detail-photo img{ width:100%; height:100%; object-fit:cover; }
+@media (max-width:800px){
+  .past-detail-right{ flex-direction:column-reverse; align-items:stretch; }
+  .past-detail-btn{ width:100%; }
+}
+
 .articles-strip{
   margin-top:40px;
   padding-top:32px;

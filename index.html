@@ -70,7 +70,7 @@ const categories = [
 ];
 
 // Публічна сторінка завантажує опубліковані дані з data.json (без кешу браузера).
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null, featuredStory:null };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -195,6 +195,49 @@ function buildStatsHtml(){
   `;
 }
 
+const TIMELINE_STEPS = [
+  { label: 'Знайшли', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#9C4A2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6.5"/><path d="M15 15l6 6"/></svg>` },
+  { label: 'Помітили', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#9C4A2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>` },
+  { label: 'Дізналися', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#9C4A2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6c-2.6-2-6-2.6-9-1.8v13.6c3-0.8 6.4-0.2 9 1.8"/><path d="M12 6c2.6-2 6-2.6 9-1.8v13.6c-3-0.8-6.4-0.2-9 1.8"/><path d="M12 6v14"/></svg>` },
+  { label: 'Зберегли', icon: `<svg viewBox="0 0 24 24" fill="none" stroke="#9C4A2E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9.5-8.5C.7 9 2 5 5.5 4c2-0.5 4 0.3 5 2 1-1.7 3-2.5 5-2 3.5 1 4.8 5 3 8.5C19 16.5 12 21 12 21z"/></svg>` }
+];
+
+function buildPastInDetailHtml(){
+  const storyId = items.featuredStory;
+  if (!storyId) return '';
+  const a = (items.articles || []).find(x => x.id === storyId);
+  if (!a) return '';
+
+  const stepsHtml = TIMELINE_STEPS.map((step, i) => {
+    const text = (a.timeline && a.timeline[i]) ? a.timeline[i] : '';
+    if (!text) return '';
+    return `
+      <div class="timeline-step">
+        <div class="timeline-icon">${step.icon}</div>
+        <p class="timeline-step-label">${String(i+1).padStart(2,'0')}. ${step.label}</p>
+        <p class="timeline-step-text">${escapeHtml(text)}</p>
+      </div>
+    `;
+  }).join('');
+
+  if (!stepsHtml) return '';
+
+  return `
+    <div class="past-detail">
+      <div class="past-detail-left">
+        <span class="eyebrow">Історія однієї речі</span>
+        <h3>${escapeHtml(a.title)}</h3>
+        ${a.subtitle ? `<p class="past-detail-subtitle">${escapeHtml(a.subtitle)}</p>` : ''}
+        <div class="timeline-row">${stepsHtml}</div>
+      </div>
+      <div class="past-detail-right">
+        <button class="read-btn past-detail-btn" onclick="openArticleDetail('${a.id}')">Читати повністю →</button>
+        <div class="past-detail-photo">${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
+      </div>
+    </div>
+  `;
+}
+
 function renderAboutPage(){
   const el = document.createElement('section');
   el.className = 'page';
@@ -258,6 +301,8 @@ function renderAboutPage(){
         <button class="carousel-arrow" onclick="scrollRecentList(1)" aria-label="Прокрутити вправо">›</button>
       </div>
     </div>
+
+    ${buildPastInDetailHtml()}
 
     <div class="articles-strip">
       <h3>Історії</h3>

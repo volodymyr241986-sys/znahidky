@@ -102,6 +102,10 @@
       <input type="text" id="aTitle" placeholder="напр. Як ми почали збирати вінтаж">
     </div>
     <div class="field">
+      <label>Підзаголовок (необов'язково)</label>
+      <input type="text" id="aSubtitle" placeholder="напр. Фарфор, кінець ХІХ ст.">
+    </div>
+    <div class="field">
       <label>Короткий опис (буде показано в стрічці)</label>
       <textarea id="aExcerpt" placeholder="2-3 речення, які підсумовують історію" style="min-height:56px;"></textarea>
     </div>
@@ -113,6 +117,19 @@
       <label>Фото (необов'язково)</label>
       <input type="file" id="aPhoto" accept="image/*">
       <div class="photo-preview" id="aPhotoPreview">без фото</div>
+    </div>
+
+    <div class="field">
+      <label>Хронологія «Минуле в деталях» (необов'язково)</label>
+      <p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px 0;">Заповніть, якщо хочете показати цю історію як розгорнуту хронологію на сторінці "Про нас".</p>
+      <label style="margin-top:8px;">01. Знайшли</label>
+      <textarea id="aStep1" placeholder="напр. Блошиний ринок у Львові, серед старого посуду." style="min-height:44px;"></textarea>
+      <label style="margin-top:8px;">02. Помітили</label>
+      <textarea id="aStep2" placeholder="напр. Тонкий малюнок і незвичний орнамент привернули увагу." style="min-height:44px;"></textarea>
+      <label style="margin-top:8px;">03. Дізналися</label>
+      <textarea id="aStep3" placeholder="напр. Ймовірно, австро-угорське виробництво кінця ХІХ ст." style="min-height:44px;"></textarea>
+      <label style="margin-top:8px;">04. Зберегли</label>
+      <textarea id="aStep4" placeholder="напр. Тепер ця чашка частина нашої колекції." style="min-height:44px;"></textarea>
     </div>
 
     <div class="modal-status" id="articleModalStatus"></div>
@@ -204,7 +221,7 @@ const categories = [
 ];
 
 const DRAFT_KEY = 'znahidky_admin_draft';
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null, featuredStory:null };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -238,6 +255,8 @@ function renderAboutPage(){
     return `<optgroup label="${cat.label}">${opts}</optgroup>`;
   }).join('');
 
+  const storyOptionsHtml = (items.articles || []).map(a => `<option value="${a.id}"${items.featuredStory === a.id ? ' selected' : ''}>${escapeHtml(a.title)}</option>`).join('');
+
   el.innerHTML = `
     <div class="about-grid">
       <div>
@@ -265,8 +284,22 @@ function renderAboutPage(){
         ${featuredOptionsHtml}
       </select>
     </div>
+
+    <div class="signature-block" style="margin-top:20px;">
+      <span class="stamp">Минуле в деталях</span>
+      <p style="font-size:14px; color:var(--ink-soft); margin:0 0 14px 0;">Оберіть історію (зі своєю хронологією), яку показувати у блоці "Минуле в деталях" на "Про нас". Заповнити хронологію можна у формі редагування історії на вкладці "Історії".</p>
+      <select id="featuredStorySelect" onchange="setFeaturedStory(this.value)" style="width:100%; font-family:'Source Serif 4', Georgia, serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--paper-card); color:var(--ink);">
+        <option value="">— не вибрано —</option>
+        ${storyOptionsHtml}
+      </select>
+    </div>
   `;
   pagesEl.appendChild(el);
+}
+
+function setFeaturedStory(value){
+  items.featuredStory = value || null;
+  saveDraft();
 }
 
 function setFeatured(value){
@@ -375,9 +408,16 @@ function openArticleModal(articleId){
 
   document.getElementById('articleModalTitle').textContent = existing ? 'Редагувати історію' : 'Нова історія';
   document.getElementById('aTitle').value = existing ? existing.title : '';
+  document.getElementById('aSubtitle').value = existing ? (existing.subtitle || '') : '';
   document.getElementById('aExcerpt').value = existing ? (existing.excerpt || '') : '';
   document.getElementById('aContent').value = existing ? (existing.content || '') : '';
   document.getElementById('aPhoto').value = '';
+
+  const steps = existing && existing.timeline ? existing.timeline : ['','','',''];
+  document.getElementById('aStep1').value = steps[0] || '';
+  document.getElementById('aStep2').value = steps[1] || '';
+  document.getElementById('aStep3').value = steps[2] || '';
+  document.getElementById('aStep4').value = steps[3] || '';
 
   if (existing && existing.photo){
     pendingArticlePhotoDataUrl = existing.photo;
@@ -436,9 +476,16 @@ document.getElementById('articleSaveBtn').addEventListener('click', () => {
 
   const fields = {
     title,
+    subtitle: document.getElementById('aSubtitle').value.trim(),
     excerpt: document.getElementById('aExcerpt').value.trim(),
     content: document.getElementById('aContent').value.trim(),
-    photo: pendingArticlePhotoDataUrl
+    photo: pendingArticlePhotoDataUrl,
+    timeline: [
+      document.getElementById('aStep1').value.trim(),
+      document.getElementById('aStep2').value.trim(),
+      document.getElementById('aStep3').value.trim(),
+      document.getElementById('aStep4').value.trim()
+    ]
   };
 
   if (!items.articles) items.articles = [];
@@ -558,6 +605,7 @@ async function loadDraft(){
       items = JSON.parse(raw);
       if (!items.articles) items.articles = [];
       if (items.featured === undefined) items.featured = null;
+      if (items.featuredStory === undefined) items.featuredStory = null;
       return;
     }
   }catch(e){ /* ignore */ }
@@ -568,6 +616,7 @@ async function loadDraft(){
       items = await res.json();
       if (!items.articles) items.articles = [];
       if (items.featured === undefined) items.featured = null;
+      if (items.featuredStory === undefined) items.featuredStory = null;
     }
   }catch(e){ /* нема опублікованих даних — стартуємо з порожнього каталогу */ }
 }
