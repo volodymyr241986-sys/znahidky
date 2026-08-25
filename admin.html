@@ -72,6 +72,16 @@
       </select>
     </div>
     <div class="field">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="fForSale" style="width:16px; height:16px;" onchange="togglePriceField()">
+        Товар для продажу (з'явиться у "Крамниці")
+      </label>
+      <div id="priceFieldWrap" style="display:none; margin-top:10px;">
+        <label>Ціна</label>
+        <input type="text" id="fPrice" placeholder="напр. 450 грн">
+      </div>
+    </div>
+    <div class="field">
       <label>Фото (необов'язково)</label>
       <input type="file" id="fPhoto" accept="image/*">
       <div class="photo-preview" id="photoPreview">без фото</div>
@@ -329,6 +339,7 @@ function renderCategoryPage(cat){
       <h3>${escapeHtml(it.title)}</h3>
       <p class="meta">знайдено: ${escapeHtml(it.place || '—')}</p>
       <p>${escapeHtml(truncateText(it.note, 90))}</p>
+      ${it.forSale ? `<p style="font-family:'Space Mono', monospace; font-size:10px; text-transform:uppercase; color:#9C4A2E; margin:0 0 8px;">🏷 на продаж${it.price ? ' · ' + escapeHtml(it.price) : ''}</p>` : ''}
       <div class="card-footer">
         <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
         <div class="card-actions">
@@ -544,6 +555,7 @@ function openDetail(catId, itemId){
         <div class="detail-meta-row">
           <span class="place">знайдено: ${escapeHtml(it.place || '—')}</span>
           <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
+          ${it.forSale ? `<span class="status" style="background:#C1613F; color:#fff;">🏷 на продаж${it.price ? ' · ' + escapeHtml(it.price) : ''}</span>` : ''}
         </div>
         <p class="note">${escapeHtml(it.note || 'Опис поки не додано.')}</p>
         <div class="detail-actions">
@@ -687,6 +699,11 @@ function removeSpecRow(index){
 
 document.getElementById('addSpecBtn').addEventListener('click', addSpecRow);
 
+function togglePriceField(){
+  const checked = document.getElementById('fForSale').checked;
+  document.getElementById('priceFieldWrap').style.display = checked ? 'block' : 'none';
+}
+
 function openModal(catId, itemId){
   currentCatForModal = catId;
   editingItemId = itemId || null;
@@ -701,6 +718,9 @@ function openModal(catId, itemId){
   document.getElementById('fNote').value = existing ? (existing.note || '') : '';
   document.getElementById('fStatus').value = existing ? existing.status : 'available';
   document.getElementById('fPhoto').value = '';
+  document.getElementById('fForSale').checked = !!(existing && existing.forSale);
+  document.getElementById('fPrice').value = existing ? (existing.price || '') : '';
+  togglePriceField();
 
   currentSpecs = existing && existing.specs ? JSON.parse(JSON.stringify(existing.specs)) : [];
   renderSpecsList();
@@ -764,6 +784,8 @@ document.getElementById('saveBtn').addEventListener('click', () => {
     note: document.getElementById('fNote').value.trim(),
     status: document.getElementById('fStatus').value,
     photo: pendingPhotoDataUrl,
+    forSale: document.getElementById('fForSale').checked,
+    price: document.getElementById('fForSale').checked ? document.getElementById('fPrice').value.trim() : '',
     specs: currentSpecs.filter(s => s.key.trim() || s.value.trim()).map(s => ({ key: s.key.trim(), value: s.value.trim() }))
   };
 

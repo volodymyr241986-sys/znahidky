@@ -28,6 +28,12 @@
 
 </div>
 
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0, behavior:'smooth'})" aria-label="Нагору">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
+</button>
+
+<nav class="bottom-nav" id="bottomNav"></nav>
+
 <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox(event)">
   <button class="lightbox-close" onclick="closeLightbox(event)" aria-label="Закрити">×</button>
   <img id="lightboxImg" src="" alt="">
@@ -102,6 +108,7 @@ const categories = [
   { id:'vinyl',    label:'Вініл',                 index:'04' },
   { id:'other',    label:'Інше',                  index:'05' },
   { id:'articles', label:'Історії',               index:'06' },
+  { id:'shop',     label:'Крамниця',              index:'07' },
 ];
 
 // Публічна сторінка завантажує опубліковані дані з data.json (без кешу браузера).
@@ -115,8 +122,29 @@ categories.forEach(cat => {
   const btn = document.createElement('button');
   btn.dataset.target = cat.id;
   btn.textContent = cat.label;
+  if (cat.id === 'shop') btn.classList.add('tab-shop');
   btn.addEventListener('click', () => showPage(cat.id));
   tabsEl.appendChild(btn);
+});
+
+const BOTTOM_NAV_ICONS = {
+  about: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>`,
+  articles: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v13H6a2 2 0 0 0-2 2Zm0 0a2 2 0 0 0 2 2h12"/></svg>`,
+  shop: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 13a3 3 0 0 0 6 0"/></svg>`
+};
+
+const bottomNavEl = document.getElementById('bottomNav');
+categories.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.dataset.target = cat.id;
+  btn.innerHTML = `<span class="bottom-nav-icon">${BOTTOM_NAV_ICONS[cat.id] || icons[cat.id] || icons.other}</span><span class="bottom-nav-label">${cat.label}</span>`;
+  if (cat.id === 'shop') btn.classList.add('tab-shop');
+  btn.addEventListener('click', () => showPage(cat.id));
+  bottomNavEl.appendChild(btn);
+});
+
+window.addEventListener('scroll', () => {
+  document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 420);
 });
 
 function escapeHtml(str){
@@ -228,6 +256,103 @@ function buildStatsHtml(){
       </div>
     </div>
   `;
+}
+
+// ===================== КРАМНИЦЯ =====================
+function getShopItems(){
+  let all = [];
+  STATS_CATEGORIES.forEach(catId => {
+    (items[catId] || []).forEach(it => {
+      if (it.forSale) all.push({ ...it, catId });
+    });
+  });
+  return all;
+}
+
+function buildShopCardHtml(it, i){
+  const cat = categories.find(c => c.id === it.catId);
+  return `
+    <article class="find-card reveal" style="--i:${i % 8}" onclick="openDetail('${it.catId}','${it.id}')">
+      <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
+      <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}</div>
+      <h3>${escapeHtml(it.title)}</h3>
+      <span class="meta">${cat.label.toLowerCase()}</span>
+      <p>${escapeHtml(truncateText(it.note, 80))}</p>
+      <div class="card-footer shop-card-footer">
+        ${it.status === 'sold'
+          ? `<span class="shop-price shop-price-sold">${it.price ? escapeHtml(it.price) : ''}</span><span class="status sold">продано</span>`
+          : `<span class="shop-price">${it.price ? escapeHtml(it.price) : 'ціна за запитом'}</span><span class="shop-cta">написати →</span>`
+        }
+      </div>
+    </article>
+  `;
+}
+
+function renderShopGrid(){
+  const grid = document.getElementById('shop-grid');
+  const countEl = document.getElementById('shop-count');
+  if (!grid) return;
+
+  const searchVal = (document.getElementById('shop-search').value || '').trim().toLowerCase();
+  const catVal = document.getElementById('shop-filter-cat').dataset.value;
+  const availVal = document.getElementById('shop-filter-avail').dataset.value;
+  const sortVal = document.getElementById('shop-sort').dataset.value;
+
+  let list = getShopItems();
+
+  if (searchVal){
+    list = list.filter(it => (it.title || '').toLowerCase().includes(searchVal));
+  }
+  if (catVal !== 'all'){
+    list = list.filter(it => it.catId === catVal);
+  }
+  if (availVal !== 'all'){
+    list = list.filter(it => it.status === availVal);
+  }
+
+  const parsePrice = (p) => {
+    const n = parseFloat((p || '').replace(/[^\d.]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
+
+  if (sortVal === 'new'){
+    list.sort((a, b) => getItemTs(b) - getItemTs(a));
+  } else if (sortVal === 'old'){
+    list.sort((a, b) => getItemTs(a) - getItemTs(b));
+  } else if (sortVal === 'az'){
+    list.sort((a, b) => a.title.localeCompare(b.title, 'uk'));
+  } else if (sortVal === 'price-asc'){
+    list.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
+  } else if (sortVal === 'price-desc'){
+    list.sort((a, b) => parsePrice(b.price) - parsePrice(a.price));
+  }
+
+  grid.innerHTML = list.length ? list.map((it, i) => buildShopCardHtml(it, i)).join('') : `<div class="empty-note">Поки що немає товарів за цими умовами.</div>`;
+  countEl.textContent = list.length + ' ' + (list.length === 1 ? 'товар' : 'товарів');
+  observeReveals(grid);
+}
+
+const SHOP_CAT_LABELS = { all:'Усі категорії', books:'Книги', ceramics:'Кераміка', paintings:'Картини', vinyl:'Вініл', other:'Інше' };
+const SHOP_AVAIL_LABELS = { all:'Усі', available:'Доступні', sold:'Продані' };
+const SHOP_SORT_LABELS = { new:'Спочатку нові', old:'Спочатку старі', az:'За назвою (А-Я)', 'price-asc':'Ціна: зростання', 'price-desc':'Ціна: спадання' };
+
+function renderShopPage(){
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-shop';
+
+  el.innerHTML = `
+    <div class="page-toolbar">
+      <input type="search" class="search-input" id="shop-search" placeholder="Пошук по назві…" oninput="renderShopGrid()">
+      ${buildCustomSelect('shop-filter-cat', SHOP_CAT_LABELS, 'all')}
+      ${buildCustomSelect('shop-filter-avail', SHOP_AVAIL_LABELS, 'all')}
+      ${buildCustomSelect('shop-sort', SHOP_SORT_LABELS, 'new')}
+      <span class="count" id="shop-count"></span>
+    </div>
+    <div class="card-grid" id="shop-grid"></div>
+  `;
+  pagesEl.appendChild(el);
+  renderShopGrid();
 }
 
 const TIMELINE_STEPS = [
@@ -401,8 +526,10 @@ function renderCategoryGrid(cat){
 // ===================== ВЛАСНИЙ ДРОПДАВН =====================
 const FILTER_LABELS = { all:'Усі', available:'В наявності', sold:'Продані' };
 const SORT_LABELS = { new:'Спочатку нові', old:'Спочатку старі', az:'За назвою (А-Я)' };
+const DROPDOWN_LABELS = {};
 
 function buildCustomSelect(id, labels, current){
+  DROPDOWN_LABELS[id] = labels;
   const optionsHtml = Object.entries(labels).map(([val, label]) => `
     <div class="custom-select-option${val === current ? ' selected' : ''}" data-value="${val}" onclick="selectDropdownOption('${id}', '${val}')">${label}</div>
   `).join('');
@@ -427,11 +554,15 @@ function toggleDropdown(id){
 function selectDropdownOption(id, value){
   const el = document.getElementById(id);
   el.dataset.value = value;
-  const labels = id.startsWith('filter-') ? FILTER_LABELS : SORT_LABELS;
+  const labels = DROPDOWN_LABELS[id] || FILTER_LABELS;
   el.querySelector('.custom-select-label').textContent = labels[value];
   el.querySelectorAll('.custom-select-option').forEach(o => o.classList.toggle('selected', o.dataset.value === value));
   el.classList.remove('open');
 
+  if (id.startsWith('shop-')){
+    renderShopGrid();
+    return;
+  }
   const catId = id.replace(/^(filter|sort)-/, '');
   const cat = categories.find(c => c.id === catId);
   if (cat) renderCategoryGrid(cat);
@@ -499,6 +630,15 @@ function openDetail(catId, itemId){
           <span class="status ${it.status}">${it.status === 'sold' ? 'вже пішло' : 'є в наявності'}</span>
         </div>
         <p class="note">${escapeHtml(it.note || 'Опис поки не додано.')}</p>
+        ${it.forSale ? `
+          <div class="detail-shop-block">
+            <span class="detail-shop-price">${it.price ? escapeHtml(it.price) : 'ціна за запитом'}</span>
+            ${it.status === 'sold'
+              ? `<span class="status sold">продано</span>`
+              : `<a class="read-btn" href="https://t.me" target="_blank" rel="noopener">Написати →</a>`
+            }
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
@@ -640,6 +780,7 @@ function showPage(id){
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelector(`nav.tabs button[data-target="${id}"]`).classList.add('active');
+  document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.target === id));
   renderPageBanner(id);
 }
 
@@ -658,6 +799,7 @@ async function init(){
   categories.forEach(cat => {
     if (cat.id === 'about') renderAboutPage();
     else if (cat.id === 'articles') renderArticlesPage();
+    else if (cat.id === 'shop') renderShopPage();
     else renderCategoryPage(cat);
   });
 
