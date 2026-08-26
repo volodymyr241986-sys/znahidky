@@ -165,6 +165,10 @@
   </div>
 </div>
 
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0, behavior:'smooth'})" aria-label="Нагору">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
+</button>
+
 <script>
 // ===================== ПАРОЛЬ =====================
 // Проста локальна перевірка — не криптографічний захист,
@@ -844,6 +848,10 @@ document.getElementById('downloadDataBtn').addEventListener('click', () => {
 });
 
 // ===================== СТАРТ =====================
+window.addEventListener('scroll', () => {
+  document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 420);
+});
+
 async function init(){
   pagesEl.innerHTML = '<p class="loading-note">Завантажуємо каталог…</p>';
   await loadDraft();

@@ -407,7 +407,10 @@ function renderAboutPage(){
   const recentHtml = recent.length ? recent.map((it, i) => {
     return `
       <div class="recent-card reveal" style="--i:${i}" onclick="openDetail('${it.catId}','${it.id}')">
-        <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}</div>
+        <div class="thumb">
+          ${it.forSale ? `<span class="for-sale-badge">на продаж</span>` : ''}
+          ${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}
+        </div>
         <p>${escapeHtml(it.title)}</p>
       </div>
     `;
@@ -477,7 +480,10 @@ function buildCardHtml(cat, it, i){
   return `
     <article class="find-card reveal" style="--i:${i % 8}" onclick="openDetail('${cat.id}','${it.id}')">
       <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
-      <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
+      <div class="thumb">
+        ${it.forSale ? `<span class="for-sale-badge">на продаж</span>` : ''}
+        ${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}
+      </div>
       <h3>${escapeHtml(it.title)}</h3>
       <p class="meta">знайдено: ${escapeHtml(it.place || '—')}</p>
       <p>${escapeHtml(truncateText(it.note, 90))}</p>
