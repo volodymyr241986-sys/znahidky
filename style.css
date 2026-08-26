@@ -1094,6 +1094,57 @@ main{
   .page-toolbar .count{ margin-left:0; width:100%; }
 }
 
+.contacts-grid{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:16px;
+  max-width:640px;
+}
+@media (max-width:600px){ .contacts-grid{ grid-template-columns:1fr; } }
+.contact-card{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background:var(--paper-card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px;
+  text-decoration:none;
+  color:var(--ink);
+  transition:all .18s ease;
+}
+.contact-card:hover{
+  border-color:var(--accent);
+  transform:translateY(-2px);
+  box-shadow:0 8px 18px rgba(58,52,44,0.1);
+}
+.contact-icon{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:var(--accent-soft);
+  color:var(--accent-deep);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.contact-icon svg{ width:19px; height:19px; }
+.contact-label{
+  font-family:'Space Mono', monospace;
+  font-size:10px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:var(--sage-deep);
+  margin:0 0 3px 0;
+}
+.contact-value{
+  font-family:'Fraunces', serif;
+  font-size:15px;
+  font-weight:600;
+  margin:0;
+}
+
 .page-head{
   display:flex;
   justify-content:space-between;

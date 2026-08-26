@@ -109,6 +109,7 @@ const categories = [
   { id:'other',    label:'Інше',                  index:'05' },
   { id:'articles', label:'Історії',               index:'06' },
   { id:'shop',     label:'Крамниця',              index:'07' },
+  { id:'contacts', label:'Контакти',              index:'08' },
 ];
 
 // Публічна сторінка завантажує опубліковані дані з data.json (без кешу браузера).
@@ -130,7 +131,8 @@ categories.forEach(cat => {
 const BOTTOM_NAV_ICONS = {
   about: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>`,
   articles: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v13H6a2 2 0 0 0-2 2Zm0 0a2 2 0 0 0 2 2h12"/></svg>`,
-  shop: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 13a3 3 0 0 0 6 0"/></svg>`
+  shop: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z"/><path d="M9 13a3 3 0 0 0 6 0"/></svg>`,
+  contacts: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>`
 };
 
 const bottomNavEl = document.getElementById('bottomNav');
@@ -353,6 +355,61 @@ function renderShopPage(){
   `;
   pagesEl.appendChild(el);
   renderShopGrid();
+}
+
+function renderContactsPage(){
+  const el = document.createElement('section');
+  el.className = 'page';
+  el.id = 'page-contacts';
+
+  el.innerHTML = `
+    <div class="page-head">
+      <h2>Контакти</h2>
+    </div>
+    <p style="font-size:15px; color:var(--ink-soft); max-width:520px; margin:0 0 28px 0;">Якщо щось із наших знахідок вас зацікавило — питання, бронювання чи купівля — оберіть зручний спосіб зв'язку.</p>
+
+    <div class="contacts-grid reveal">
+      <a class="contact-card" href="https://t.me" target="_blank" rel="noopener">
+        <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4L2.5 11.5l6 2 2 6.5 3-4 4.5 3.5L21 4z"/><path d="M8.5 13.5L19 6"/></svg></div>
+        <div>
+          <p class="contact-label">Telegram</p>
+          <p class="contact-value">@znahidky_na_dvoh</p>
+        </div>
+      </a>
+      <a class="contact-card" href="https://instagram.com" target="_blank" rel="noopener">
+        <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg></div>
+        <div>
+          <p class="contact-label">Instagram</p>
+          <p class="contact-value">@znahidky.na.dvoh</p>
+        </div>
+      </a>
+      <a class="contact-card" href="https://facebook.com" target="_blank" rel="noopener">
+        <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 4h-2a4 4 0 0 0-4 4v3H6v4h3v7h4v-7h3l1-4h-4V8a1 1 0 0 1 1-1h3z"/></svg></div>
+        <div>
+          <p class="contact-label">Facebook</p>
+          <p class="contact-value">Знахідки на двох</p>
+        </div>
+      </a>
+      <a class="contact-card" href="mailto:znahidky@example.com">
+        <div class="contact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
+        <div>
+          <p class="contact-label">Пошта</p>
+          <p class="contact-value">znahidky@example.com</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="signature-block reveal" style="margin-top:32px;">
+      <span class="stamp">Як відбувається купівля</span>
+      <ul>
+        <li>Пишете в будь-який зручний месенджер — домовляємось про ціну й деталі</li>
+        <li>Оплата переказом на карту</li>
+        <li>Забрати особисто у Львові або відправимо Новою поштою</li>
+      </ul>
+    </div>
+  `;
+  pagesEl.appendChild(el);
+  observeReveals(el);
 }
 
 const TIMELINE_STEPS = [
@@ -806,6 +863,7 @@ async function init(){
     if (cat.id === 'about') renderAboutPage();
     else if (cat.id === 'articles') renderArticlesPage();
     else if (cat.id === 'shop') renderShopPage();
+    else if (cat.id === 'contacts') renderContactsPage();
     else renderCategoryPage(cat);
   });
 
