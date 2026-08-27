@@ -126,13 +126,65 @@ const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
 let detailReturnTo = 'about';
 
-categories.forEach(cat => {
-  const btn = document.createElement('button');
-  btn.dataset.target = cat.id;
-  btn.textContent = cat.label;
-  if (cat.id === 'shop') btn.classList.add('tab-shop');
-  btn.addEventListener('click', () => showPage(cat.id));
-  tabsEl.appendChild(btn);
+const FINDS_GROUP_IDS = ['books','ceramics','paintings','vinyl','other'];
+const TOP_TAB_SEQUENCE = ['about', 'finds-group', 'articles', 'shop', 'contacts'];
+
+function buildTopTabs(){
+  TOP_TAB_SEQUENCE.forEach(id => {
+    if (id === 'finds-group'){
+      const wrap = document.createElement('div');
+      wrap.className = 'finds-tab-wrap';
+
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'tab-finds';
+      trigger.id = 'findsTabTrigger';
+      trigger.innerHTML = `Знахідки <svg class="finds-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+      trigger.addEventListener('click', (e) => { e.stopPropagation(); toggleFindsDropdown(); });
+      wrap.appendChild(trigger);
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'finds-dropdown';
+      dropdown.id = 'findsDropdown';
+      FINDS_GROUP_IDS.forEach(catId => {
+        const cat = categories.find(c => c.id === catId);
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'finds-dropdown-card';
+        card.dataset.target = catId;
+        card.innerHTML = `<span class="finds-dropdown-icon">${icons[catId] || icons.other}</span><span class="finds-dropdown-label">${cat.label}</span>`;
+        card.addEventListener('click', () => { showPage(catId); closeFindsDropdown(); });
+        dropdown.appendChild(card);
+      });
+      wrap.appendChild(dropdown);
+      tabsEl.appendChild(wrap);
+    } else {
+      const cat = categories.find(c => c.id === id);
+      const btn = document.createElement('button');
+      btn.dataset.target = cat.id;
+      btn.textContent = cat.label;
+      if (cat.id === 'shop') btn.classList.add('tab-shop');
+      btn.addEventListener('click', () => showPage(cat.id));
+      tabsEl.appendChild(btn);
+    }
+  });
+}
+buildTopTabs();
+
+function toggleFindsDropdown(){
+  document.querySelector('.finds-tab-wrap').classList.toggle('open');
+}
+function closeFindsDropdown(){
+  const wrap = document.querySelector('.finds-tab-wrap');
+  if (wrap) wrap.classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.finds-tab-wrap')){
+    closeFindsDropdown();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeFindsDropdown();
 });
 
 const BOTTOM_NAV_ICONS = {
@@ -857,6 +909,8 @@ function showPage(id){
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   document.querySelector(`nav.tabs button[data-target="${id}"]`).classList.add('active');
+  const findsTrigger = document.getElementById('findsTabTrigger');
+  if (findsTrigger) findsTrigger.classList.toggle('active', FINDS_GROUP_IDS.includes(id));
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.target === id));
   renderPageBanner(id);
 }
