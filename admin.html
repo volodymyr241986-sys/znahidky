@@ -232,10 +232,19 @@ const categories = [
   { id:'vinyl',    label:'Вініл',                 index:'04' },
   { id:'other',    label:'Інше',                  index:'05' },
   { id:'articles', label:'Історії',               index:'06' },
+  { id:'contacts', label:'Контакти',              index:'08' },
 ];
 
+const DEFAULT_CONTACTS = {
+  telegram: 'https://t.me',
+  instagram: 'https://instagram.com',
+  facebook: 'https://facebook.com',
+  email: 'znahidky@example.com',
+  buying: 'Пишете в будь-який зручний месенджер — домовляємось про ціну й деталі\nОплата переказом на карту\nЗабрати особисто у Львові або відправимо Новою поштою'
+};
+
 const DRAFT_KEY = 'znahidky_admin_draft';
-let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null, featuredStory:null };
+let items = { books:[], ceramics:[], paintings:[], vinyl:[], other:[], articles:[], featured:null, featuredStory:null, contacts:null };
 
 const tabsEl = document.getElementById('tabs');
 const pagesEl = document.getElementById('pages');
@@ -375,6 +384,57 @@ function truncateText(str, maxLen){
   if (!str) return '';
   if (str.length <= maxLen) return str;
   return str.slice(0, maxLen).trim() + '…';
+}
+
+// ===================== КОНТАКТИ (адмін) =====================
+function renderContactsAdminPage(){
+  let el = document.getElementById('page-contacts');
+  if (!el){
+    el = document.createElement('section');
+    el.className = 'page';
+    el.id = 'page-contacts';
+    pagesEl.appendChild(el);
+  }
+  const c = items.contacts || DEFAULT_CONTACTS;
+
+  el.innerHTML = `
+    <div class="page-head">
+      <h2>Контакти</h2>
+    </div>
+    <div class="signature-block">
+      <span class="stamp">Способи зв'язку</span>
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px 0;">Вставте повні посилання (напр. https://t.me/ваш_нік). Зміни зберігаються автоматично.</p>
+
+      <div class="field">
+        <label>Telegram (посилання)</label>
+        <input type="text" id="cTelegram" value="${escapeHtml(c.telegram || '')}" oninput="updateContact('telegram', this.value)" placeholder="https://t.me/username">
+      </div>
+      <div class="field">
+        <label>Instagram (посилання)</label>
+        <input type="text" id="cInstagram" value="${escapeHtml(c.instagram || '')}" oninput="updateContact('instagram', this.value)" placeholder="https://instagram.com/username">
+      </div>
+      <div class="field">
+        <label>Facebook (посилання)</label>
+        <input type="text" id="cFacebook" value="${escapeHtml(c.facebook || '')}" oninput="updateContact('facebook', this.value)" placeholder="https://facebook.com/...">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="cEmail" value="${escapeHtml(c.email || '')}" oninput="updateContact('email', this.value)" placeholder="pasta@example.com">
+      </div>
+    </div>
+
+    <div class="signature-block" style="margin-top:20px;">
+      <span class="stamp">Як відбувається купівля</span>
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px 0;">Кожен рядок — окремий пункт списку на сторінці "Контакти".</p>
+      <textarea id="cBuying" oninput="updateContact('buying', this.value)" style="min-height:100px; width:100%; font-family:'Source Serif 4', Georgia, serif; font-size:14px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--paper-card); color:var(--ink);">${escapeHtml(c.buying || '')}</textarea>
+    </div>
+  `;
+}
+
+function updateContact(field, value){
+  if (!items.contacts) items.contacts = { ...DEFAULT_CONTACTS };
+  items.contacts[field] = value;
+  saveDraft();
 }
 
 // ===================== СТАТТІ (адмін) =====================
@@ -594,6 +654,8 @@ function renderAll(){
       if (!document.getElementById('page-about')) renderAboutPage();
     } else if (cat.id === 'articles') {
       renderArticlesAdminPage();
+    } else if (cat.id === 'contacts') {
+      renderContactsAdminPage();
     } else {
       renderCategoryPage(cat);
     }
@@ -622,6 +684,7 @@ async function loadDraft(){
       if (!items.articles) items.articles = [];
       if (items.featured === undefined) items.featured = null;
       if (items.featuredStory === undefined) items.featuredStory = null;
+      if (!items.contacts) items.contacts = { ...DEFAULT_CONTACTS };
       return;
     }
   }catch(e){ /* ignore */ }
@@ -633,6 +696,7 @@ async function loadDraft(){
       if (!items.articles) items.articles = [];
       if (items.featured === undefined) items.featured = null;
       if (items.featuredStory === undefined) items.featuredStory = null;
+      if (!items.contacts) items.contacts = { ...DEFAULT_CONTACTS };
     }
   }catch(e){ /* нема опублікованих даних — стартуємо з порожнього каталогу */ }
 }
