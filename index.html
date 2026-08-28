@@ -335,7 +335,10 @@ function buildShopCardHtml(it, i){
   return `
     <article class="find-card reveal" style="--i:${i % 8}" onclick="openDetail('${it.catId}','${it.id}')">
       <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
-      <div class="thumb">${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}</div>
+      <div class="thumb">
+        ${isRecent(it) && it.status !== 'sold' ? `<span class="new-badge">нове</span>` : ''}
+        ${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}
+      </div>
       <h3>${escapeHtml(it.title)}</h3>
       <span class="meta">${cat.label.toLowerCase()}</span>
       <p>${escapeHtml(truncateText(it.note, 80))}</p>
@@ -531,6 +534,7 @@ function renderAboutPage(){
     return `
       <div class="recent-card reveal" style="--i:${i}" onclick="openDetail('${it.catId}','${it.id}')">
         <div class="thumb">
+          ${isRecent(it) ? `<span class="new-badge">нове</span>` : ''}
           ${it.forSale ? `<span class="for-sale-badge">на продаж</span>` : ''}
           ${it.photo ? `<img src="${it.photo}" alt="">` : (icons[it.catId] || icons.other)}
         </div>
@@ -604,6 +608,7 @@ function buildCardHtml(cat, it, i){
     <article class="find-card reveal" style="--i:${i % 8}" onclick="openDetail('${cat.id}','${it.id}')">
       <span class="cat-no">${cat.index}.${String(i+1).padStart(2,'0')}</span>
       <div class="thumb">
+        ${isRecent(it) ? `<span class="new-badge">нове</span>` : ''}
         ${it.forSale ? `<span class="for-sale-badge">на продаж</span>` : ''}
         ${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}
       </div>
@@ -620,6 +625,11 @@ function buildCardHtml(cat, it, i){
 function getItemTs(it){
   const m = /^it_(\d+)_/.exec(it.id);
   return m ? parseInt(m[1], 10) : 0;
+}
+
+function isRecent(it){
+  const ts = getItemTs(it);
+  return ts > 0 && (Date.now() - ts) < 7 * 24 * 60 * 60 * 1000;
 }
 
 function renderCategoryGrid(cat){
@@ -732,6 +742,33 @@ function renderDetailPage(){
   return el;
 }
 
+// ===================== ПОДІЛИТИСЯ =====================
+function showToast(text){
+  let toast = document.getElementById('shareToast');
+  if (!toast){
+    toast = document.createElement('div');
+    toast.id = 'shareToast';
+    toast.className = 'share-toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.classList.add('visible');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => toast.classList.remove('visible'), 2200);
+}
+
+function shareLink(hash){
+  const url = window.location.origin + window.location.pathname + '#' + hash;
+  const finish = () => showToast('Посилання скопійовано!');
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(finish).catch(() => {
+      window.prompt('Скопіюйте посилання:', url);
+    });
+  } else {
+    window.prompt('Скопіюйте посилання:', url);
+  }
+}
+
 function openDetail(catId, itemId){
   const cat = categories.find(c => c.id === catId);
   const it = (items[catId] || []).find(x => x.id === itemId);
@@ -745,7 +782,13 @@ function openDetail(catId, itemId){
     </div>
   ` : '';
   el.innerHTML = `
-    <button class="back-btn" onclick="closeDetail()">← Назад до «${cat.label}»</button>
+    <div class="detail-header-row">
+      <button class="back-btn" onclick="closeDetail()">← Назад до «${cat.label}»</button>
+      <button class="share-btn" onclick="shareLink('${catId}/${itemId}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+        Поділитися
+      </button>
+    </div>
     <div class="detail-grid">
       <div class="detail-left reveal">
         <div class="detail-photo"${it.photo ? ` onclick="openLightbox('${it.photo}')" style="cursor:zoom-in;"` : ''}>${it.photo ? `<img src="${it.photo}" alt="">` : (icons[cat.id] || icons.other)}</div>
@@ -771,6 +814,7 @@ function openDetail(catId, itemId){
       </div>
     </div>
   `;
+  history.replaceState(null, '', '#' + catId + '/' + itemId);
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
@@ -825,7 +869,13 @@ function openArticleDetail(articleId){
   detailReturnTo = 'articles';
   const el = renderArticleDetailPage();
   el.innerHTML = `
-    <button class="back-btn" onclick="closeDetail()">← Назад до «Історії»</button>
+    <div class="detail-header-row">
+      <button class="back-btn" onclick="closeDetail()">← Назад до «Історії»</button>
+      <button class="share-btn" onclick="shareLink('articles/${a.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+        Поділитися
+      </button>
+    </div>
     <div class="detail-grid">
       <div class="detail-photo reveal"${a.photo ? ` onclick="openLightbox('${a.photo}')" style="cursor:zoom-in;"` : ''}>${a.photo ? `<img src="${a.photo}" alt="">` : icons.other}</div>
       <div class="detail-info reveal" style="--i:1">
@@ -834,6 +884,7 @@ function openArticleDetail(articleId){
       </div>
     </div>
   `;
+  history.replaceState(null, '', '#articles/' + a.id);
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
@@ -938,9 +989,35 @@ async function init(){
   totalItemsCount = STATS_CATEGORIES.reduce((sum, id) => sum + (items[id] || []).length, 0);
   document.getElementById('footer-count').textContent = totalItemsCount + ' знахідок у каталозі';
 
-  showPage('about');
+  openFromHash();
 }
 init();
+
+function openFromHash(){
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash){
+    showPage('about');
+    return;
+  }
+  if (hash.includes('/')){
+    const [catId, itemId] = hash.split('/');
+    if (catId === 'articles' && (items.articles || []).some(a => a.id === itemId)){
+      openArticleDetail(itemId);
+      return;
+    }
+    if (categories.find(c => c.id === catId) && (items[catId] || []).some(x => x.id === itemId)){
+      openDetail(catId, itemId);
+      return;
+    }
+    showPage('about');
+    return;
+  }
+  if (categories.find(c => c.id === hash)){
+    showPage(hash);
+  } else {
+    showPage('about');
+  }
+}
 </script>
 </body>
 </html>
